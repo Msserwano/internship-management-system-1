@@ -15,20 +15,30 @@ let pool = null;
 const initializePool = () => {
   if (pool) return pool;
 
-  if (process.env.NODE_ENV === "production" && (!process.env.DB_HOST || !process.env.DB_PASSWORD || !process.env.DB_NAME)) {
-    throw new Error("DB_HOST, DB_PASSWORD, and DB_NAME must be configured in production.");
+  const connectionString = process.env.DATABASE_URL;
+  if (process.env.NODE_ENV === "production" && !connectionString && (!process.env.DB_HOST || !process.env.DB_PASSWORD || !process.env.DB_NAME)) {
+    throw new Error("DATABASE_URL or DB_HOST, DB_PASSWORD, and DB_NAME must be configured in production.");
   }
 
-  const config = {
-    user: process.env.DB_USER || "postgres",
-    password: process.env.DB_PASSWORD || "postgres",
-    host: process.env.DB_HOST || "localhost",
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || "kcca_ims",
+  const config = connectionString
+    ? { connectionString }
+    : {
+      user: process.env.DB_USER || "postgres",
+      password: process.env.DB_PASSWORD || "postgres",
+      host: process.env.DB_HOST || "localhost",
+      port: process.env.DB_PORT || 5432,
+      database: process.env.DB_NAME || "kcca_ims",
+    };
+
+  Object.assign(config, {
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 30000,
     max: 20,
-  };
+  });
+
+  if (process.env.DB_SSL === "true") {
+    config.ssl = { rejectUnauthorized: false };
+  }
 
   pool = new Pool(config);
 
@@ -60,7 +70,10 @@ const testConnection = async () => {
     logger.info("Database connected successfully", { timestamp: result.rows[0] });
     return true;
   } catch (err) {
-    logger.error("Database connection failed", { error: err.message });
+    logger.error("Database connection failed", {
+      error: err.message || err.code || "Unable to establish a PostgreSQL connection",
+      host: process.env.DB_HOST || "DATABASE_URL",
+    });
     return false;
   }
 };
