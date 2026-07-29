@@ -8,6 +8,7 @@ const path = require("path");
 const DATA_FILE = path.join(__dirname, "../userStore.json");
 const JWT_SECRET = process.env.JWT_SECRET || "kcca_internship_jwt_secret_fallback";
 const JWT_EXPIRES = "7d";
+const SKIP_EMAIL_VERIFICATION = String(process.env.SKIP_EMAIL_VERIFICATION).toLowerCase() === "true";
 
 // In-memory user store + file persistence
 const userStore = new Map();
@@ -113,7 +114,7 @@ const safeUser = (u) => ({
 ───────────────────────────────────────────────────────────── */
 const registerUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, password } = req.body;
+    const { firstName, lastName, email, phone, password, role } = req.body;
 
     if (!email || !password || !firstName || !lastName) {
       return res.status(400).json({ success: false, message: "All required fields must be provided." });
@@ -133,7 +134,34 @@ const registerUser = async (req, res) => {
     // Hash the password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Generate OTP
+    // Allow immediate access for applicants or when SKIP_EMAIL_VERIFICATION=true
+    const assignedRole = (role || "applicant").toLowerCase();
+    const autoVerify = SKIP_EMAIL_VERIFICATION || assignedRole === "applicant";
+
+    if (autoVerify) {
+      // Persist as verified account — no OTP required
+      userStore.set(normalizedEmail, {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: normalizedEmail,
+        phone: phone?.trim() || "",
+        passwordHash,
+        role: assignedRole,
+        isVerified: true,
+        createdAt: existing?.createdAt || new Date().toISOString(),
+      });
+
+      saveUserStore();
+
+      return res.status(201).json({
+        success: true,
+        message: "Registration successful. Your account is verified and you can log in.",
+        email: normalizedEmail,
+        deliveryMode: "auto-verified",
+      });
+    }
+
+    // Fallback: OTP verification flow for non-applicant roles
     const otpCode = generateOTP();
     const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
 
@@ -144,7 +172,7 @@ const registerUser = async (req, res) => {
       email: normalizedEmail,
       phone: phone?.trim() || "",
       passwordHash,
-      role: "applicant",
+      role: assignedRole,
       isVerified: false,
       otp: otpCode,
       otpExpiresAt,
