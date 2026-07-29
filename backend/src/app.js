@@ -26,7 +26,6 @@ const logger = require("./config/logger");
 const requestLogger = require("./middleware/requestLogger");
 const auditLogger = require("./middleware/auditLogger");
 const { errorHandler, notFoundHandler, asyncHandler } = require("./middleware/errorHandler");
-const { apiRateLimit, authRateLimit } = require("./middleware/rateLimit");
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
@@ -95,14 +94,11 @@ app.get("/api/health", (req, res) => {
 });
 
 // ── API Routes ──────────────────────────────────────────────────────────
-// Auth routes with strict rate limiting
-app.use("/api/auth", authRateLimit, authRoutes);
-
-// Protected routes with standard rate limiting
-app.use("/api/internships", apiRateLimit, internshipRoutes);
-app.use("/api/users", apiRateLimit, userRoutes);
-app.use("/api/applications", apiRateLimit, applicationRoutes);
-app.use("/api/interviews", apiRateLimit, interviewRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/internships", internshipRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/applications", applicationRoutes);
+app.use("/api/interviews", interviewRoutes);
 
 // ── 404 Handler ─────────────────────────────────────────────────────────
 app.use(notFoundHandler);
