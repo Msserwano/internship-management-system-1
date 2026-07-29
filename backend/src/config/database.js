@@ -26,14 +26,14 @@ const initializePool = () => {
       user: process.env.DB_USER || "postgres",
       password: process.env.DB_PASSWORD || "postgres",
       host: process.env.DB_HOST || "localhost",
-      port: process.env.DB_PORT || 5432,
+      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
       database: process.env.DB_NAME || "kcca_ims",
     };
 
   Object.assign(config, {
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 30000,
-    max: 20,
+    max: parseInt(process.env.DB_MAX_CLIENTS, 10) || 20,
   });
 
   if (process.env.DB_SSL === "true") {
@@ -54,7 +54,13 @@ const initializePool = () => {
  */
 const getPool = () => {
   if (!pool) {
-    initializePool();
+    try {
+      initializePool();
+    } catch (err) {
+      // If initialization fails, log and rethrow so callers can behave accordingly
+      logger.error("Failed to initialize DB pool", { error: err.message });
+      throw err;
+    }
   }
   return pool;
 };
@@ -64,7 +70,8 @@ const getPool = () => {
  */
 const testConnection = async () => {
   try {
-    const client = await getPool().connect();
+    const p = initializePool();
+    const client = await p.connect();
     const result = await client.query("SELECT NOW()");
     client.release();
     logger.info("Database connected successfully", { timestamp: result.rows[0] });
