@@ -1,55 +1,100 @@
 // backend/src/app.js
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const compression = require("compression");
 const path = require("path");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger");
+const logger = require("./config/logger");
+
+// Middleware
+const requestLogger = require("./middleware/requestLogger");
+const { errorHandler, notFoundHandler, asyncHandler } = require("./middleware/errorHandler");
+const { apiRateLimit, authRateLimit } = require("./middleware/rateLimit");
+
+// Routes
+const authRoutes = require("./routes/authRoutes");
+const internshipRoutes = require("./routes/internshipRoutes");
+const userRoutes = require("./routes/userRoutes");
+const applicationRoutes = require("./routes/applicationRoutes");
+const interviewRoutes = require("./routes/interviewRoutes");
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// ── Security Middleware ────────────────────────────────────────────────────
+app.use(helmet());
+app.use(compression());
+
+// ── CORS Configuration ────────────────────────────────────────────────────
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  maxAge: 86400,
+};
+app.use(cors(corsOptions));
+
+// ── Body Parsing ───────────────────────────────────────────────────────────
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+// ── Static Files ───────────────────────────────────────────────────────────
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ── Routes ────────────────────────────────────────────────────────────────
-const authRoutes         = require("./routes/authRoutes");
-const internshipRoutes   = require("./routes/internshipRoutes");
-const userRoutes         = require("./routes/userRoutes");
-const applicationRoutes  = require("./routes/applicationRoutes");
-const interviewRoutes    = require("./routes/interviewRoutes");
+// ── Request Logging ────────────────────────────────────────────────────────
+app.use(requestLogger);
 
-// Auth
-app.use("/api/auth",         authRoutes);
+// ── API Documentation ────────────────────────────────────────────────────────
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: {
+    docExpansion: "list",
+    supportedSubmitMethods: ["get", "post", "put", "delete", "patch"],
+  },
+}));
 
-// Internships  — Write | Edit | Delete | Retrieve | Modify | Store
-app.use("/api/internships",  internshipRoutes);
-
-// Users        — Write | Edit | Delete | Retrieve | Modify | Store
-app.use("/api/users",        userRoutes);
-
-// Applications — Write | Edit | Delete | Retrieve | Modify | Store
-app.use("/api/applications", applicationRoutes);
-
-// Interviews   — Write | Edit | Delete | Retrieve | Modify | Store
-app.use("/api/interviews",   interviewRoutes);
-
-// ── Health check ─────────────────────────────────────────────────────────
+// ── Health Check ────────────────────────────────────────────────────────────
 app.get("/api/health", (req, res) => {
   res.json({
     status: "OK",
     service: "KCCA IMS Backend API",
     timestamp: new Date(),
-    routes: [
-      "GET|POST        /api/auth/*",
-      "GET|POST|PUT|DELETE /api/internships",
-      "GET|POST|PUT|DELETE /api/users",
-      "GET|POST|PUT|DELETE /api/applications",
-      "GET|POST|PUT|DELETE /api/interviews",
-    ],
+    environment: process.env.NODE_ENV,
   });
 });
 
-// ── 404 Fallback ──────────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ success: false, message: `Route ${req.method} ${req.originalUrl} not found.` });
-});
+// ── API Routes ───────────────────────────────────────────────────────────────
+// Auth routes with strict rate limiting
+app.use("/api/auth", authRateLimit, authRoutes);
+
+// Protected routes with standard rate limiting
+app.use("/api/internships", apiRateLimit, internshipRoutes);
+app.use("/api/users", apiRateLimit, userRoutes);
+app.use("/api/applications", apiRateLimit, applicationRoutes);
+app.use("/api/interviews", apiRateLimit, interviewRoutes);
+
+// ── 404 Handler ────────────────────────────────────────────────────────────
+app.use(notFoundHandler);
+
+// ── Error Handling Middleware (Must be last) ────────────────────────────────
+app.use(errorHandler);
+
+// Initialize database
+const { testConnection, initializeSchema, seedDemoUsers } = require("./config/database");
+
+app.initializeDatabase = async () => {
+  try {
+    const connected = await testConnection();
+    if (connected) {
+      await initializeSchema();
+      await seedDemoUsers();
+      logger.info("Database initialization complete");
+    }
+  } catch (err) {
+    logger.error("Database initialization failed", { error: err.message });
+  }
+};
 
 module.exports = app;
