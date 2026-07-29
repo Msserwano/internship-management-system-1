@@ -3,16 +3,19 @@ const nodemailer = require("nodemailer");
 
 const createTransporter = () => {
   const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
+  // Support either EMAIL_PASS (older) or EMAIL_PASSWORD (common)
+  const pass = process.env.EMAIL_PASS || process.env.EMAIL_PASSWORD;
 
-  if (!user || !pass || user.includes("your-email@gmail.com")) {
+  // Basic sanity checks: if missing credentials or placeholder address, fall back to console mode
+  if (!user || !pass || (typeof user === "string" && /your-?email/i.test(user))) {
+    console.warn('[MAILER] SMTP not configured: please set EMAIL_USER and EMAIL_PASSWORD (or EMAIL_PASS) in .env');
     return null; // Signals fallback to console mode
   }
 
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: parseInt(process.env.SMTP_PORT || "587", 10),
-    secure: process.env.SMTP_PORT === "465", // true for 465, false for 587
+    secure: String(process.env.SMTP_PORT) === "465", // true for 465, false for 587
     auth: {
       user: user,
       pass: pass,
