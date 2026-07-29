@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { getPool } = require("../config/database");
 
-const JWT_SECRET = process.env.JWT_SECRET || "kcca_internship_jwt_secret_fallback";
+const JWT_SECRET = process.env.JWT_SECRET || "development-only-secret";
 const JWT_EXPIRES = "7d";
 const SKIP_EMAIL_VERIFICATION = String(process.env.SKIP_EMAIL_VERIFICATION).toLowerCase() === "true";
 
@@ -30,14 +30,19 @@ const ensureOtpColumns = async (client) => {
 };
 
 const registerUser = async (req, res) => {
-  const { firstName, lastName, email, phone, password, role } = req.body;
+  const { firstName, lastName, email, phone, password } = req.body;
   if (!email || !password || !firstName || !lastName) {
     return res.status(400).json({ success: false, message: "All required fields must be provided." });
   }
 
   const normalizedEmail = String(email).trim().toLowerCase();
-  const assignedRole = (role || "applicant").toLowerCase();
-  const autoVerify = SKIP_EMAIL_VERIFICATION || assignedRole === "applicant";
+  if (!/^\S+@\S+\.\S+$/.test(normalizedEmail) || String(password).length < 8) {
+    return res.status(400).json({ success: false, message: "Provide a valid email address and a password of at least 8 characters." });
+  }
+  // Public registration can only create applicants. HR and administrator
+  // accounts are provisioned through the administrator-only users endpoint.
+  const assignedRole = "applicant";
+  const autoVerify = SKIP_EMAIL_VERIFICATION;
 
   const client = await pool.connect();
   try {
@@ -92,7 +97,7 @@ const registerUser = async (req, res) => {
     client.release();
 
     const responsePayload = { success: true, message: "Registration successful! A 6-digit verification code has been sent to your email.", email: normalizedEmail, deliveryMode: emailResult.mode };
-    if (emailResult.mode === "console" || emailResult.mode === "fallback") {
+    if (process.env.NODE_ENV !== "production" && (emailResult.mode === "console" || emailResult.mode === "fallback")) {
       responsePayload.devCode = emailResult.code || otpCode;
       responsePayload.message = `Registration successful! (Dev Mode — your verification code is: ${emailResult.code || otpCode})`;
     }

@@ -96,8 +96,6 @@ const ApplyWizard = () => {
     try {
       await applicationService.submit({
         internshipId:   internship.id,
-        applicantId:    user?.id || "U001",
-        applicantName:  formData.fullName,
         university:     formData.university,
         course:         formData.course,
         gpa:            formData.gpa,

@@ -15,6 +15,10 @@ let pool = null;
 const initializePool = () => {
   if (pool) return pool;
 
+  if (process.env.NODE_ENV === "production" && (!process.env.DB_HOST || !process.env.DB_PASSWORD || !process.env.DB_NAME)) {
+    throw new Error("DB_HOST, DB_PASSWORD, and DB_NAME must be configured in production.");
+  }
+
   const config = {
     user: process.env.DB_USER || "postgres",
     password: process.env.DB_PASSWORD || "postgres",

@@ -8,7 +8,10 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     // Initialize database
-    await app.initializeDatabase();
+    const databaseReady = await app.initializeDatabase();
+    if (!databaseReady) {
+      throw new Error("Database connection is required to start the API.");
+    }
 
     const server = app.listen(PORT, () => {
       logger.info(`KCCA IMS API Server running on port ${PORT}`);

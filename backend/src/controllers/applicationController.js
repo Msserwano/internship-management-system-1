@@ -1,6 +1,7 @@
 // backend/src/controllers/applicationController.js
 const { getPool } = require("../config/database");
 const pool = getPool();
+const isStaff = (user) => ["hr", "admin"].includes(String(user?.role).toLowerCase());
 
 const ensureTimelineColumn = async (client) => {
   await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
@@ -15,7 +16,9 @@ const getAllApplications = async (req, res) => {
     const clauses = [];
     const params = [];
     let idx = 1;
-    if (applicantId) { clauses.push(`applicant_id = $${idx}`); params.push(applicantId); idx++; }
+    // Applicants never choose the applicant ID filter; it is derived from their JWT.
+    const effectiveApplicantId = isStaff(req.user) ? applicantId : req.user.id;
+    if (effectiveApplicantId) { clauses.push(`applicant_id = $${idx}`); params.push(effectiveApplicantId); idx++; }
     if (internshipId) { clauses.push(`internship_id = $${idx}`); params.push(internshipId); idx++; }
     if (status) { clauses.push(`LOWER(status) = $${idx}`); params.push(status.toLowerCase()); idx++; }
     const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
@@ -34,7 +37,10 @@ const getAllApplications = async (req, res) => {
 const getApplicationById = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM applications WHERE id = $1', [id]);
+    const query = isStaff(req.user)
+      ? 'SELECT * FROM applications WHERE id = $1'
+      : 'SELECT * FROM applications WHERE id = $1 AND applicant_id = $2';
+    const result = await pool.query(query, isStaff(req.user) ? [id] : [id, req.user.id]);
     const item = result.rows[0];
     if (!item) return res.status(404).json({ success: false, message: 'Application not found.' });
     return res.status(200).json({ success: true, data: item });
@@ -49,7 +55,7 @@ const getApplicationById = async (req, res) => {
  */
 const submitApplication = async (req, res) => {
   try {
-    const { internshipId, applicantId, applicantName, university, course, gpa } = req.body;
+    const { internshipId, university, course, gpa } = req.body;
     if (!internshipId || !university || !course) return res.status(400).json({ success: false, message: 'Internship, university, and course are required.' });
 
     const client = await pool.connect();
@@ -58,16 +64,18 @@ const submitApplication = async (req, res) => {
       await client.query('BEGIN');
       const internshipRes = await client.query('SELECT * FROM internships WHERE id = $1 FOR UPDATE', [internshipId]);
       const internship = internshipRes.rows[0];
+      if (!internship || internship.status !== "open" || new Date(internship.deadline) < new Date()) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ success: false, message: "This internship is not accepting applications." });
+      }
 
       const id = `APP${String(Date.now()).slice(-6)}`;
       const timeline = [{ status: 'submitted', date: new Date().toISOString(), note: 'Application submitted successfully.' }];
       const q = `INSERT INTO applications (id, internship_id, applicant_id, university, course, gpa, status, review_note, submitted_at, timeline, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW()) RETURNING *`;
-      const params = [id, internshipId, applicantId || null, university, course, gpa || null, 'submitted', null, new Date().toISOString(), JSON.stringify(timeline)];
+      const params = [id, internshipId, req.user.id, university, course, gpa || null, 'submitted', null, new Date().toISOString(), JSON.stringify(timeline)];
       const appRes = await client.query(q, params);
 
-      if (internship) {
-        await client.query('UPDATE internships SET applicants_count = COALESCE(applicants_count,0) + 1, updated_at=NOW() WHERE id = $1', [internshipId]);
-      }
+      await client.query('UPDATE internships SET applicants_count = COALESCE(applicants_count,0) + 1, updated_at=NOW() WHERE id = $1', [internshipId]);
 
       await client.query('COMMIT');
       return res.status(201).json({ success: true, message: 'Application submitted successfully.', data: appRes.rows[0] });
@@ -94,7 +102,11 @@ const updateApplication = async (req, res) => {
       await ensureTimelineColumn(client);
       const existingRes = await client.query('SELECT * FROM applications WHERE id = $1', [id]);
       const existing = existingRes.rows[0];
-      if (!existing) { client.release(); return res.status(404).json({ success: false, message: 'Application not found.' }); }
+      if (!existing) return res.status(404).json({ success: false, message: 'Application not found.' });
+
+      if (!isStaff(req.user) && (existing.applicant_id !== req.user.id || req.body.status !== "withdrawn" || Object.keys(req.body).some((key) => key !== "status"))) {
+        return res.status(403).json({ success: false, message: "Applicants may only withdraw their own application." });
+      }
 
       const { status, reviewNote } = req.body;
       let timeline = existing.timeline || [];
@@ -115,15 +127,15 @@ const updateApplication = async (req, res) => {
         sets.push(`${col} = $${idx}`);
         idx++;
       }
-      if (sets.length === 0) { client.release(); return res.status(400).json({ success: false, message: 'No valid fields to update.' }); }
+      if (sets.length === 0) return res.status(400).json({ success: false, message: 'No valid fields to update.' });
       params.push(id);
       const q = `UPDATE applications SET ${sets.join(', ')}, updated_at=NOW() WHERE id = $${idx} RETURNING *`;
       const result = await client.query(q, params);
-      client.release();
       return res.status(200).json({ success: true, message: 'Application updated successfully.', data: result.rows[0] });
     } catch (err) {
-      client.release();
       throw err;
+    } finally {
+      client.release();
     }
   } catch (err) {
     console.error('[APPLICATION CONTROLLER] update failed:', err.message);

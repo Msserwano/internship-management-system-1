@@ -45,6 +45,9 @@ const createUser = async (req, res) => {
   try {
     const { name, email, password, role, phone, title, department } = req.body;
     if (!name || !email || !password || !role) return res.status(400).json({ success: false, message: 'Name, email, password, and role are required.' });
+    if (!["applicant", "hr", "admin", "supervisor"].includes(String(role).toLowerCase())) {
+      return res.status(400).json({ success: false, message: 'Invalid user role.' });
+    }
     const normalizedEmail = String(email).trim().toLowerCase();
     const existing = await pool.query('SELECT id FROM users WHERE LOWER(email)=LOWER($1)', [normalizedEmail]);
     if (existing.rowCount > 0) return res.status(409).json({ success: false, message: 'A user with this email already exists.' });

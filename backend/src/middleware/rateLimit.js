@@ -11,7 +11,7 @@ const requests = new Map();
 /**
  * Clean old entries (runs every 15 minutes)
  */
-setInterval(() => {
+const cleanupTimer = setInterval(() => {
   const now = Date.now();
   const maxAge = 15 * 60 * 1000; // 15 minutes
 
@@ -24,6 +24,8 @@ setInterval(() => {
     }
   }
 }, 15 * 60 * 1000);
+// Do not keep command-line tools and tests alive solely for housekeeping.
+cleanupTimer.unref();
 
 /**
  * Rate limiter middleware
@@ -32,7 +34,9 @@ setInterval(() => {
  */
 const rateLimit = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
   return (req, res, next) => {
-    const key = req.ip || req.connection.remoteAddress;
+    // Scope a limit to a route group as well as an address. This prevents normal
+    // API traffic from consuming the much stricter authentication allowance.
+    const key = `${req.ip || req.connection.remoteAddress}:${req.baseUrl}`;
     const now = Date.now();
 
     // Get request times for this IP
@@ -47,7 +51,7 @@ const rateLimit = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
       return res.status(429).json({
         success: false,
         message: "Too many requests. Please try again later.",
-        retryAfter: Math.ceil(windowMs / 1000),
+        retryAfter: Math.ceil((times[0] + windowMs - now) / 1000),
       });
     }
 
@@ -74,8 +78,11 @@ const authRateLimit = rateLimit(5, 15 * 60 * 1000); // 5 requests per 15 minutes
  */
 const apiRateLimit = rateLimit(100, 15 * 60 * 1000); // 100 requests per 15 minutes
 
+const resetRateLimits = () => requests.clear();
+
 module.exports = {
   rateLimit,
   authRateLimit,
   apiRateLimit,
+  resetRateLimits,
 };

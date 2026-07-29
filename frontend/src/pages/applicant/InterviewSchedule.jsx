@@ -19,7 +19,7 @@ const InterviewSchedule = () => {
 
   const handleAccept = async (id) => {
     try {
-      await interviewService.update(id, { response: "accepted" });
+      await interviewService.update(id, { status: "accepted" });
       toast.success("Interview invitation accepted! HR has been notified.");
       refetch();
     } catch {
@@ -30,7 +30,7 @@ const InterviewSchedule = () => {
   const handleDecline = async () => {
     if (!declineTarget) return;
     try {
-      await interviewService.update(declineTarget.id, { response: "declined" });
+      await interviewService.update(declineTarget.id, { status: "declined" });
       toast.success("Interview invitation declined.");
       setDeclineTarget(null);
       refetch();

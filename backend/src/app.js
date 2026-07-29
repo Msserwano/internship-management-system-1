@@ -23,6 +23,7 @@ const logger = require("./config/logger");
 
 // Middleware
 const requestLogger = require("./middleware/requestLogger");
+const auditLogger = require("./middleware/auditLogger");
 const { errorHandler, notFoundHandler, asyncHandler } = require("./middleware/errorHandler");
 const { apiRateLimit, authRateLimit } = require("./middleware/rateLimit");
 
@@ -61,6 +62,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ── Request Logging ────────────────────────────────────────────────────────
 app.use(requestLogger);
+app.use(auditLogger);
 
 // ── API Documentation ────────────────────────────────────────────────────────
 if (swaggerUi) {
@@ -111,8 +113,10 @@ app.initializeDatabase = async () => {
       await seedDemoUsers();
       logger.info("Database initialization complete");
     }
+    return connected;
   } catch (err) {
     logger.error("Database initialization failed", { error: err.message });
+    return false;
   }
 };
 

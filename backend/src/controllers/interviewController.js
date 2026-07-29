@@ -1,6 +1,7 @@
 // backend/src/controllers/interviewController.js
 const { getPool } = require("../config/database");
 const pool = getPool();
+const isStaff = (user) => ["hr", "admin"].includes(String(user?.role).toLowerCase());
 
 /**
  * Retrieve interviews (with optional status/applicationId filter)
@@ -13,8 +14,9 @@ const getAllInterviews = async (req, res) => {
     let idx = 1;
     if (applicationId) { clauses.push(`application_id = $${idx}`); params.push(applicationId); idx++; }
     if (status) { clauses.push(`LOWER(status) = $${idx}`); params.push(status.toLowerCase()); idx++; }
+    if (!isStaff(req.user)) { clauses.push(`a.applicant_id = $${idx}`); params.push(req.user.id); }
     const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
-    const q = `SELECT * FROM interviews ${where} ORDER BY interview_date DESC`;
+    const q = `SELECT i.* FROM interviews i JOIN applications a ON a.id = i.application_id ${where.replaceAll('application_id', 'i.application_id').replaceAll('LOWER(status)', 'LOWER(i.status)')} ORDER BY i.interview_date DESC`;
     const result = await pool.query(q, params);
     return res.status(200).json({ success: true, count: result.rowCount, data: result.rows });
   } catch (err) {
@@ -29,7 +31,10 @@ const getAllInterviews = async (req, res) => {
 const getInterviewById = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM interviews WHERE id = $1', [id]);
+    const query = isStaff(req.user)
+      ? 'SELECT * FROM interviews WHERE id = $1'
+      : 'SELECT i.* FROM interviews i JOIN applications a ON a.id = i.application_id WHERE i.id = $1 AND a.applicant_id = $2';
+    const result = await pool.query(query, isStaff(req.user) ? [id] : [id, req.user.id]);
     const item = result.rows[0];
     if (!item) return res.status(404).json({ success: false, message: 'Interview record not found.' });
     return res.status(200).json({ success: true, data: item });
@@ -75,9 +80,12 @@ const scheduleInterview = async (req, res) => {
 const updateInterview = async (req, res) => {
   try {
     const { id } = req.params;
-    const check = await pool.query('SELECT id FROM interviews WHERE id = $1', [id]);
+    const check = await pool.query('SELECT i.id, a.applicant_id FROM interviews i JOIN applications a ON a.id = i.application_id WHERE i.id = $1', [id]);
     if (check.rowCount === 0) return res.status(404).json({ success: false, message: 'Interview not found.' });
     const updates = req.body;
+    if (!isStaff(req.user) && (check.rows[0].applicant_id !== req.user.id || !["accepted", "declined"].includes(updates.status) || Object.keys(updates).some((key) => key !== "status"))) {
+      return res.status(403).json({ success: false, message: "Applicants may only accept or decline their own interview." });
+    }
     const allowed = ['interview_date','interview_time','venue','meeting_link','status','instructions'];
     const sets = [];
     const params = [];

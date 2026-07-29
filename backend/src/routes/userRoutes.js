@@ -8,15 +8,15 @@ const {
   updateUser,
   deleteUser,
 } = require("../controllers/userController");
-const { requireAuth, requireRole } = require("../middleware/authJwt");
+const { requireAuth, requireRole, requireSelfOrRole } = require("../middleware/authJwt");
 
 // ── RETRIEVE (all / filtered) ─────────────────────────────────────────────
 // GET /api/users?role=applicant&status=active&search=sarah
-router.get("/", getAllUsers);
+router.get("/", requireAuth, requireRole(["hr", "admin"]), getAllUsers);
 
 // ── RETRIEVE BY ID ─────────────────────────────────────────────────────────
 // GET /api/users/:id
-router.get("/:id", getUserById);
+router.get("/:id", requireAuth, requireSelfOrRole(), getUserById);
 
 // ── WRITE / STORE (create) ─────────────────────────────────────────────────
 // POST /api/users  { name, email, password, role, phone, title, department }

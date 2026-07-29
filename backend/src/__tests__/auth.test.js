@@ -1,99 +1,119 @@
-// backend/src/__tests__/auth.test.js
-/**
- * Authentication Controller Tests
- */
 const request = require("supertest");
+
+const mockClient = {
+  query: jest.fn(),
+  release: jest.fn(),
+};
+const mockPool = {
+  connect: jest.fn(async () => mockClient),
+  query: jest.fn(),
+};
+
+jest.mock("../config/database", () => ({
+  getPool: jest.fn(() => mockPool),
+  testConnection: jest.fn(),
+  initializeSchema: jest.fn(),
+  seedDemoUsers: jest.fn(),
+}));
+
+jest.mock("bcryptjs", () => ({
+  hash: jest.fn(async () => "hashed-password"),
+  compare: jest.fn(async () => true),
+}));
+
 const app = require("../app");
+const { resetRateLimits } = require("../middleware/rateLimit");
+const bcrypt = require("bcryptjs");
 
 describe("Authentication Routes", () => {
-  describe("POST /api/auth/login", () => {
-    it("should login user with valid credentials", async () => {
-      const response = await request(app)
-        .post("/api/auth/login")
-        .send({
-          email: "applicant@kcca.go.ug",
-          password: "password123",
-        });
-
-      expect([200, 401]).toContain(response.status);
-      expect(response.body).toHaveProperty("success");
-    });
-
-    it("should fail with invalid email", async () => {
-      const response = await request(app)
-        .post("/api/auth/login")
-        .send({
-          email: "invalid-email",
-          password: "password123",
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-    });
-
-    it("should fail with missing password", async () => {
-      const response = await request(app)
-        .post("/api/auth/login")
-        .send({
-          email: "applicant@kcca.go.ug",
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
+  beforeEach(() => {
+    resetRateLimits();
+    jest.clearAllMocks();
+    mockPool.connect.mockResolvedValue(mockClient);
+    bcrypt.compare.mockResolvedValue(true);
+    bcrypt.hash.mockResolvedValue("hashed-password");
+    mockClient.query.mockImplementation(async (query, params = []) => {
+      if (query.includes("SELECT * FROM users") && params[0] === "applicant@kcca.go.ug") {
+        return {
+          rows: [{
+            id: "U001",
+            name: "Sarah Nakimuli",
+            email: "applicant@kcca.go.ug",
+            role: "applicant",
+            is_verified: true,
+            password_hash: "hashed-password",
+          }],
+          rowCount: 1,
+        };
+      }
+      return { rows: [], rowCount: 0 };
     });
   });
 
-  describe("POST /api/auth/register", () => {
-    it("should register user with valid data", async () => {
-      const response = await request(app)
-        .post("/api/auth/register")
-        .send({
-          name: "Test User",
-          email: `test-${Date.now()}@kcca.go.ug`,
-          password: "testPass123",
-          phone: "+256 700 000 000",
-        });
-
-      expect([201, 400, 409]).toContain(response.status);
-      expect(response.body).toHaveProperty("success");
+  it("logs in a verified user with valid credentials", async () => {
+    mockClient.query.mockResolvedValueOnce({
+      rows: [{
+        id: "U001",
+        name: "Sarah Nakimuli",
+        email: "applicant@kcca.go.ug",
+        role: "applicant",
+        is_verified: true,
+        password_hash: "hashed-password",
+      }],
+      rowCount: 1,
     });
+    const response = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "applicant@kcca.go.ug", password: "password123" });
 
-    it("should fail with weak password", async () => {
-      const response = await request(app)
-        .post("/api/auth/register")
-        .send({
-          name: "Test User",
-          email: `test-${Date.now()}@kcca.go.ug`,
-          password: "weak",
-          phone: "+256 700 000 000",
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-    });
-
-    it("should fail with invalid email", async () => {
-      const response = await request(app)
-        .post("/api/auth/register")
-        .send({
-          name: "Test User",
-          email: "not-an-email",
-          password: "testPass123",
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-    });
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ success: true, user: { id: "U001", role: "applicant" } });
+    expect(response.body.token).toEqual(expect.any(String));
   });
 
-  describe("GET /api/health", () => {
-    it("should return health status", async () => {
-      const response = await request(app).get("/api/health");
+  it("rejects unknown login credentials", async () => {
+    const response = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "missing@example.com", password: "password123" });
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty("status", "OK");
-      expect(response.body).toHaveProperty("service");
-      expect(response.body).toHaveProperty("timestamp");
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+  });
+
+  it("validates login input before a database query", async () => {
+    const response = await request(app).post("/api/auth/login").send({ email: "x@example.com" });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("creates public registrations as applicants only", async () => {
+    const response = await request(app).post("/api/auth/register").send({
+      firstName: "Test",
+      lastName: "Applicant",
+      email: "test@example.com",
+      password: "SecurePass123",
+      role: "admin",
     });
+
+    expect(response.status).toBe(201);
+    const insert = mockClient.query.mock.calls.find(([query]) => query.includes("INSERT INTO users"));
+    expect(insert[1][6]).toBe("applicant");
+  });
+
+  it("rejects malformed registration input", async () => {
+    const response = await request(app).post("/api/auth/register").send({
+      firstName: "Test",
+      lastName: "Applicant",
+      email: "not-an-email",
+      password: "SecurePass123",
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("serves the health check", async () => {
+    const response = await request(app).get("/api/health");
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe("OK");
   });
 });
