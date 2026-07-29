@@ -1,0 +1,213 @@
+{
+  "users": [
+    {
+      "id": "U001",
+      "name": "sserwano moris",
+      "firstName": "Sarah",
+      "lastName": "Nakimuli",
+      "email": "applicant@kcca.go.ug",
+      "password": "password123",
+      "role": "applicant",
+      "phone": "+256 701 234 567",
+      "gender": "Female",
+      "district": "Kampala",
+      "nationality": "Ugandan",
+      "status": "active",
+      "createdAt": "2026-07-01T00:00:00.000Z",
+      "isVerified": true,
+      "updatedAt": "2026-07-29T13:12:33.730Z"
+    },
+    {
+      "id": "U002",
+      "name": "nakityo marvis",
+      "firstName": "James",
+      "lastName": "Ssemakula",
+      "email": "hr@kcca.go.ug",
+      "password": "password123",
+      "role": "hr",
+      "phone": "+256 703 456 789",
+      "title": "HR Officer",
+      "status": "active",
+      "createdAt": "2025-01-15T00:00:00.000Z",
+      "isVerified": true,
+      "updatedAt": "2026-07-29T13:13:00.268Z"
+    },
+    {
+      "id": "U003",
+      "name": "sserwano moris",
+      "firstName": "Patricia",
+      "lastName": "Nakato",
+      "email": "admin@kcca.go.ug",
+      "password": "password123",
+      "role": "admin",
+      "phone": "+256 704 789 012",
+      "title": "System Administrator",
+      "status": "active",
+      "createdAt": "2024-06-01T00:00:00.000Z",
+      "isVerified": true,
+      "updatedAt": "2026-07-29T13:13:17.862Z"
+    }
+  ],
+  "internships": [
+    {
+      "id": "INT001",
+      "title": "Software Development Intern",
+      "department": "ICT",
+      "description": "Develop and maintain internal web apps and databases.",
+      "vacancies": 4,
+      "deadline": "2026-08-15",
+      "supervisor": "Mr. sserwano moris",
+      "duration": "3 Months",
+      "location": "City Hall – Kampala",
+      "status": "open",
+      "posted": "2026-07-01",
+      "applicantsCount": 25,
+      "updatedAt": "2026-07-29T13:10:05.453Z",
+      "requirements": []
+    },
+    {
+      "id": "INT002",
+      "title": "Public Health Intern",
+      "department": "Public Health Services",
+      "description": "Community health outreach programs and data collection.",
+      "vacancies": 6,
+      "deadline": "2026-08-20",
+      "supervisor": "Dr. Aisha Namazzi",
+      "duration": "6 Months",
+      "location": "Kawempe Division",
+      "status": "open",
+      "posted": "2026-07-05",
+      "applicantsCount": 41
+    },
+    {
+      "id": "INT003",
+      "title": "Urban Planning Intern",
+      "department": "Urban Planning",
+      "description": "Support land-use mapping and environmental impact assessments.",
+      "vacancies": 3,
+      "deadline": "2026-08-30",
+      "supervisor": "Eng. Moses Kabugo",
+      "duration": "4 Months",
+      "location": "City Hall – Kampala",
+      "status": "open",
+      "posted": "2026-07-08",
+      "applicantsCount": 15
+    },
+    {
+      "id": "INT004",
+      "title": "Finance & Accounts Intern",
+      "department": "Finance & Planning",
+      "description": "Assist in financial reporting, budget prep, and audit support.",
+      "vacancies": 5,
+      "deadline": "2026-09-01",
+      "supervisor": "Ms. Grace Akullo",
+      "duration": "3 Months",
+      "location": "City Hall – Kampala",
+      "status": "open",
+      "posted": "2026-07-10",
+      "applicantsCount": 37
+    }
+  ],
+  "applications": [
+    {
+      "id": "APP2941",
+      "createdAt": "2026-07-29T13:02:02.941Z",
+      "internshipId": "INT001",
+      "internshipTitle": "Software Development Intern",
+      "department": "ICT",
+      "applicantId": "U001",
+      "applicantName": "Sarah Nakimuli",
+      "university": "Makerere University",
+      "course": "Computer Science",
+      "gpa": "4.5",
+      "status": "shortlisted",
+      "submittedAt": "2026-07-29T13:02:02.941Z",
+      "timeline": [
+        {
+          "status": "submitted",
+          "date": "2026-07-29T13:02:02.941Z",
+          "note": "Application submitted successfully."
+        },
+        {
+          "status": "shortlisted",
+          "date": "2026-07-29T13:02:03.006Z",
+          "note": "Strong candidate."
+        }
+      ],
+      "reviewNote": "Strong candidate.",
+      "updatedAt": "2026-07-29T13:02:03.006Z"
+    },
+    {
+      "id": "APP3709",
+      "createdAt": "2026-07-29T12:47:33.709Z",
+      "internshipId": "INT001",
+      "internshipTitle": "Software Development Intern",
+      "department": "ICT",
+      "applicantId": "U001",
+      "applicantName": "Sarah Nakimuli",
+      "university": "Makerere University",
+      "course": "Computer Science",
+      "gpa": "4.5",
+      "status": "shortlisted",
+      "submittedAt": "2026-07-29T12:47:33.709Z",
+      "timeline": [
+        {
+          "status": "submitted",
+          "date": "2026-07-29T12:47:33.709Z",
+          "note": "Application submitted successfully."
+        },
+        {
+          "status": "shortlisted",
+          "date": "2026-07-29T12:47:33.759Z",
+          "note": "Strong candidate."
+        }
+      ],
+      "reviewNote": "Strong candidate.",
+      "updatedAt": "2026-07-29T12:47:33.759Z"
+    },
+    {
+      "id": "APP001",
+      "internshipId": "INT001",
+      "internshipTitle": "Software Development Intern",
+      "department": "ICT",
+      "applicantId": "U001",
+      "applicantName": "Sarah Nakimuli",
+      "university": "Makerere University",
+      "course": "Computer Science",
+      "gender": "Female",
+      "gpa": "4.2",
+      "status": "shortlisted",
+      "submittedAt": "2026-07-10T09:30:00Z",
+      "reviewNote": "Shortlisted for interview."
+    },
+    {
+      "id": "APP002",
+      "internshipId": "INT004",
+      "internshipTitle": "Finance & Accounts Intern",
+      "department": "Finance & Planning",
+      "applicantId": "U001",
+      "applicantName": "Sarah Nakimuli",
+      "university": "Makerere University",
+      "course": "Computer Science",
+      "gender": "Female",
+      "gpa": "4.2",
+      "status": "under_review",
+      "submittedAt": "2026-07-15T11:00:00Z",
+      "reviewNote": ""
+    }
+  ],
+  "interviews": [
+    {
+      "id": "IVW001",
+      "applicationId": "APP001",
+      "applicantName": "Sarah Nakimuli",
+      "internshipTitle": "Software Development Intern",
+      "department": "ICT",
+      "date": "2026-08-05",
+      "time": "10:00 AM",
+      "venue": "KCCA Boardroom 2, City Hall",
+      "meetingLink": "https://meet.google.com/kcca-int-2026",
+      "status": "scheduled"
+    }
+  ]
+}

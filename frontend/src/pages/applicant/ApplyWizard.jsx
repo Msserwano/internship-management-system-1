@@ -1,0 +1,470 @@
+// src/pages/applicant/ApplyWizard.jsx
+import { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import Breadcrumbs from "../../components/layout/Breadcrumbs";
+import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
+import Select from "../../components/ui/Select";
+import useApi from "../../hooks/useApi";
+import { applicationService } from "../../api/services";
+import { useAuth } from "../../context/AuthContext";
+import toast from "react-hot-toast";
+import {
+  Check, ArrowRight, ArrowLeft, Upload, FileText, User, GraduationCap,
+  Building, Paperclip, Send, CheckCircle2
+} from "lucide-react";
+
+const STEPS = [
+  { id: 1, name: "Personal Details", icon: User },
+  { id: 2, name: "Academic Details", icon: GraduationCap },
+  { id: 3, name: "University Info", icon: Building },
+  { id: 4, name: "Documents", icon: Paperclip },
+  { id: 5, name: "Review & Submit", icon: FileText },
+];
+
+const ApplyWizard = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: internships } = useApi("/internships");
+  const internship = internships.find((i) => String(i.id) === String(id)) || {
+    id: id || "INT001",
+    title: "Software Development Intern",
+    department: "ICT",
+    duration: "3 Months",
+    location: "City Hall – Kampala",
+  };
+
+  const [currentStep, setCurrentStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    // Step 1: Personal
+    fullName: user?.name || "Sarah Nakimuli",
+    email: user?.email || "applicant@kcca.go.ug",
+    phone: user?.phone || "+256 701 234 567",
+    gender: user?.gender || "Female",
+    dob: user?.dob || "2001-03-14",
+    district: user?.district || "Kampala",
+    nin: "CM010203040506",
+
+    // Step 2: Academic
+    qualification: "Bachelor's Degree",
+    course: user?.course || "Computer Science",
+    yearOfStudy: user?.yearOfStudy || "3rd Year",
+    gpa: user?.gpa || "4.2",
+
+    // Step 3: University
+    university: user?.university || "Makerere University",
+    studentId: user?.studentId || "16/U/0001/PS",
+    headOfDept: "Dr. Florence Tushabe",
+    universityEmail: "info@mak.ac.ug",
+
+    // Step 4: Documents
+    nationalIdDoc: "national_id.pdf",
+    recommendationDoc: "recommendation_letter.pdf",
+    transcriptDoc: "academic_transcript.pdf",
+    cvDoc: "cv_sarah.pdf",
+    coverLetterDoc: "cover_letter.pdf",
+    photoDoc: "passport_photo.jpg",
+  });
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileUpload = (field, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleChange(field, file.name);
+      toast.success(`${file.name} uploaded successfully.`);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentStep < 5) setCurrentStep(currentStep + 1);
+  };
+
+  const handlePrev = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      await applicationService.submit({
+        internshipId:   internship.id,
+        applicantId:    user?.id || "U001",
+        applicantName:  formData.fullName,
+        university:     formData.university,
+        course:         formData.course,
+        gpa:            formData.gpa,
+      });
+      toast.success("Application submitted successfully to KCCA!");
+      navigate("/applicant/applications");
+    } catch {
+      toast.error("Failed to submit application. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="page-container max-w-4xl mx-auto">
+      <Breadcrumbs />
+
+      {/* Internship Banner */}
+      <div className="card p-6 bg-gradient-to-r from-primary-600 to-primary-800 text-white mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <span className="text-xs font-semibold bg-white/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              {internship.department}
+            </span>
+            <h2 className="text-2xl font-bold mt-2">{internship.title}</h2>
+            <p className="text-primary-100 text-xs mt-1">
+              Duration: {internship.duration} • Location: {internship.location}
+            </p>
+          </div>
+          <div className="text-right">
+            <span className="text-xs text-primary-200">Applying as</span>
+            <p className="font-semibold text-sm">{user?.name}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Stepper */}
+      <div className="card p-6 mb-8">
+        <div className="flex items-center justify-between relative">
+          {STEPS.map((step, idx) => {
+            const isDone = currentStep > step.id;
+            const isCurrent = currentStep === step.id;
+            const Icon = step.icon;
+
+            return (
+              <div key={step.id} className="flex-1 flex flex-col items-center relative z-10">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
+                    isDone
+                      ? "bg-accent-500 text-white"
+                      : isCurrent
+                      ? "bg-primary-500 text-white shadow-lg scale-110 ring-4 ring-primary-100 dark:ring-primary-900/40"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-400"
+                  }`}
+                >
+                  {isDone ? <Check className="w-5 h-5" /> : <Icon className="w-4 h-4" />}
+                </div>
+                <span
+                  className={`text-xs mt-2 font-medium hidden sm:block text-center ${
+                    isCurrent
+                      ? "text-primary-600 dark:text-primary-400 font-bold"
+                      : isDone
+                      ? "text-slate-700 dark:text-slate-300"
+                      : "text-slate-400"
+                  }`}
+                >
+                  {step.name}
+                </span>
+
+                {idx < STEPS.length - 1 && (
+                  <div
+                    className={`absolute top-5 left-1/2 w-full h-0.5 -z-10 transition-colors ${
+                      currentStep > step.id ? "bg-accent-500" : "bg-slate-200 dark:bg-slate-700"
+                    }`}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Wizard Form Steps */}
+      <div className="card p-6 md:p-8">
+        <AnimatePresence mode="wait">
+          {currentStep === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-5"
+            >
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700">
+                Step 1: Personal Details
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Full Name"
+                  required
+                  value={formData.fullName}
+                  onChange={(e) => handleChange("fullName", e.target.value)}
+                />
+                <Input
+                  label="Email Address"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                />
+                <Input
+                  label="Phone Number"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => handleChange("phone", e.target.value)}
+                />
+                <Select
+                  label="Gender"
+                  required
+                  value={formData.gender}
+                  onChange={(e) => handleChange("gender", e.target.value)}
+                  options={["Female", "Male", "Other"]}
+                />
+                <Input
+                  label="Date of Birth"
+                  type="date"
+                  required
+                  value={formData.dob}
+                  onChange={(e) => handleChange("dob", e.target.value)}
+                />
+                <Input
+                  label="Home District"
+                  required
+                  value={formData.district}
+                  onChange={(e) => handleChange("district", e.target.value)}
+                />
+                <Input
+                  label="National ID Number (NIN)"
+                  required
+                  value={formData.nin}
+                  onChange={(e) => handleChange("nin", e.target.value)}
+                  placeholder="CM..."
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {currentStep === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-5"
+            >
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700">
+                Step 2: Academic Details
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select
+                  label="Current Qualification"
+                  required
+                  value={formData.qualification}
+                  onChange={(e) => handleChange("qualification", e.target.value)}
+                  options={["Certificate", "Diploma", "Bachelor's Degree", "Master's Degree"]}
+                />
+                <Input
+                  label="Course / Program of Study"
+                  required
+                  value={formData.course}
+                  onChange={(e) => handleChange("course", e.target.value)}
+                />
+                <Select
+                  label="Year of Study"
+                  required
+                  value={formData.yearOfStudy}
+                  onChange={(e) => handleChange("yearOfStudy", e.target.value)}
+                  options={["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year"]}
+                />
+                <Input
+                  label="Current CGPA / GPA"
+                  required
+                  value={formData.gpa}
+                  onChange={(e) => handleChange("gpa", e.target.value)}
+                  placeholder="e.g. 4.2"
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {currentStep === 3 && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-5"
+            >
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700">
+                Step 3: University Information
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="University / Institution Name"
+                  required
+                  value={formData.university}
+                  onChange={(e) => handleChange("university", e.target.value)}
+                />
+                <Input
+                  label="Student ID / Registration Number"
+                  required
+                  value={formData.studentId}
+                  onChange={(e) => handleChange("studentId", e.target.value)}
+                />
+                <Input
+                  label="Head of Department Name"
+                  required
+                  value={formData.headOfDept}
+                  onChange={(e) => handleChange("headOfDept", e.target.value)}
+                />
+                <Input
+                  label="University Contact Email"
+                  type="email"
+                  required
+                  value={formData.universityEmail}
+                  onChange={(e) => handleChange("universityEmail", e.target.value)}
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {currentStep === 4 && (
+            <motion.div
+              key="step4"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-5"
+            >
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700">
+                Step 4: Upload Required Documents
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { field: "nationalIdDoc", label: "National ID / Passport", desc: "PDF or JPG copy" },
+                  { field: "recommendationDoc", label: "University Recommendation Letter", desc: "Signed letter from Dean" },
+                  { field: "transcriptDoc", label: "Academic Transcript", desc: "Official transcript" },
+                  { field: "cvDoc", label: "Curriculum Vitae (CV)", desc: "Updated CV" },
+                  { field: "coverLetterDoc", label: "Cover Letter", desc: "Addressed to KCCA HR" },
+                  { field: "photoDoc", label: "Passport Photo", desc: "Recent clear photo" },
+                ].map((doc) => (
+                  <div
+                    key={doc.field}
+                    className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40 space-y-2"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold text-xs text-slate-800 dark:text-white">{doc.label}</p>
+                        <p className="text-[11px] text-slate-400">{doc.desc}</p>
+                      </div>
+                      {formData[doc.field] && (
+                        <span className="badge badge-accepted text-[10px]">Uploaded</span>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <label className="btn btn-outline btn-xs cursor-pointer flex items-center gap-1">
+                        <Upload className="w-3 h-3" /> Select File
+                        <input
+                          type="file"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(doc.field, e)}
+                        />
+                      </label>
+                      <span className="text-xs text-slate-500 truncate flex-1">
+                        {formData[doc.field] || "No file chosen"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {currentStep === 5 && (
+            <motion.div
+              key="step5"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-6"
+            >
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700">
+                Step 5: Review & Submit Application
+              </h3>
+
+              <div className="space-y-4 text-sm">
+                <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl space-y-2">
+                  <h4 className="font-bold text-xs text-primary-600 dark:text-primary-400 uppercase">Personal Details</h4>
+                  <p><strong>Name:</strong> {formData.fullName}</p>
+                  <p><strong>Email:</strong> {formData.email} | <strong>Phone:</strong> {formData.phone}</p>
+                  <p><strong>NIN:</strong> {formData.nin} | <strong>District:</strong> {formData.district}</p>
+                </div>
+
+                <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl space-y-2">
+                  <h4 className="font-bold text-xs text-primary-600 dark:text-primary-400 uppercase">Academic Details</h4>
+                  <p><strong>Course:</strong> {formData.course} ({formData.qualification})</p>
+                  <p><strong>Institution:</strong> {formData.university}</p>
+                  <p><strong>Year of Study:</strong> {formData.yearOfStudy} | <strong>GPA:</strong> {formData.gpa}</p>
+                </div>
+
+                <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl space-y-2">
+                  <h4 className="font-bold text-xs text-primary-600 dark:text-primary-400 uppercase">Attached Documents</h4>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <p>✓ National ID</p>
+                    <p>✓ Recommendation Letter</p>
+                    <p>✓ Academic Transcript</p>
+                    <p>✓ Curriculum Vitae</p>
+                    <p>✓ Cover Letter</p>
+                    <p>✓ Passport Photo</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 rounded-xl text-xs flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
+                <p>
+                  By submitting this application, you certify that all the provided information and uploaded documents are accurate and authentic according to KCCA policy.
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Wizard Controls */}
+        <div className="flex items-center justify-between pt-6 mt-6 border-t border-slate-100 dark:border-slate-700">
+          {currentStep > 1 ? (
+            <Button variant="ghost" size="md" onClick={handlePrev} icon={ArrowLeft}>
+              Previous
+            </Button>
+          ) : (
+            <div />
+          )}
+
+          {currentStep < 5 ? (
+            <Button variant="primary" size="md" onClick={handleNext} iconRight={ArrowRight}>
+              Next Step
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleSubmit}
+              loading={submitting}
+              icon={Send}
+            >
+              Submit Application
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ApplyWizard;
