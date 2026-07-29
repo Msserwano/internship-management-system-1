@@ -7,15 +7,23 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    // Initialize database
+    // Initialize database. In development and CI we allow the server to start
+    // even when the database is not available. In production we require it.
     const databaseReady = await app.initializeDatabase();
+
     if (!databaseReady) {
-      throw new Error("Database connection is required to start the API.");
+      const isProd = process.env.NODE_ENV === "production";
+      if (isProd) {
+        throw new Error("Database connection is required to start the API in production.");
+      } else {
+        // Log a clear warning and continue — many developer workflows run without a DB
+        logger.warn("Database is not available — continuing startup in non-production mode. Some features will be disabled.");
+      }
     }
 
     const server = app.listen(PORT, () => {
       logger.info(`KCCA IMS API Server running on port ${PORT}`);
-      logger.info(`Environment: ${process.env.NODE_ENV}`);
+      logger.info(`Environment: ${process.env.NODE_ENV || "development"}`);
       logger.info(`API Documentation available at http://localhost:${PORT}/api-docs`);
     });
 

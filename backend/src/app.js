@@ -18,7 +18,8 @@ const safeRequire = (name) => {
 const helmet = safeRequire("helmet");
 const compression = safeRequire("compression");
 const swaggerUi = safeRequire("swagger-ui-express");
-const swaggerSpec = safeRequire("./config/swagger") || require("./config/swagger");
+// Load swagger spec only if present; do NOT force require when missing
+const swaggerSpec = safeRequire("./config/swagger");
 const logger = require("./config/logger");
 
 // Middleware
@@ -53,11 +54,11 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// ── Body Parsing ───────────────────────────────────────────────────────────
+// ── Body Parsing ─────────────────────────────────────────────────────────
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-// ── Static Files ───────────────────────────────────────────────────────────
+// ── Static Files ─────────────────────────────────────────────────────────
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ── Request Logging ────────────────────────────────────────────────────────
@@ -65,18 +66,25 @@ app.use(requestLogger);
 app.use(auditLogger);
 
 // ── API Documentation ────────────────────────────────────────────────────────
-if (swaggerUi) {
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    swaggerOptions: {
-      docExpansion: "list",
-      supportedSubmitMethods: ["get", "post", "put", "delete", "patch"],
-    },
-  }));
+// Only enable API docs when both swagger-ui-express and the swagger spec are available
+if (swaggerUi && swaggerSpec) {
+  app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      swaggerOptions: {
+        docExpansion: "list",
+        supportedSubmitMethods: ["get", "post", "put", "delete", "patch"],
+      },
+    })
+  );
+} else if (swaggerUi && !swaggerSpec) {
+  console.warn("[WARN] 'swagger-ui-express' is installed but './config/swagger' is missing — /api-docs disabled.");
 } else {
   console.warn("[WARN] 'swagger-ui-express' not available — /api-docs disabled.");
 }
 
-// ── Health Check ────────────────────────────────────────────────────────────
+// ── Health Check ─────────────────────────────────────────────────────────
 app.get("/api/health", (req, res) => {
   res.json({
     status: "OK",
@@ -86,7 +94,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// ── API Routes ───────────────────────────────────────────────────────────────
+// ── API Routes ──────────────────────────────────────────────────────────
 // Auth routes with strict rate limiting
 app.use("/api/auth", authRateLimit, authRoutes);
 
@@ -96,7 +104,7 @@ app.use("/api/users", apiRateLimit, userRoutes);
 app.use("/api/applications", apiRateLimit, applicationRoutes);
 app.use("/api/interviews", apiRateLimit, interviewRoutes);
 
-// ── 404 Handler ────────────────────────────────────────────────────────────
+// ── 404 Handler ─────────────────────────────────────────────────────────
 app.use(notFoundHandler);
 
 // ── Error Handling Middleware (Must be last) ────────────────────────────────

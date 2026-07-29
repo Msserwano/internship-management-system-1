@@ -15,30 +15,35 @@ let pool = null;
 const initializePool = () => {
   if (pool) return pool;
 
+  // Prefer DATABASE_URL when available (e.g., in Heroku/CI). Fall back to individual env vars.
+  if (process.env.DATABASE_URL) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      connectionTimeoutMillis: 5000,
+      idleTimeoutMillis: 30000,
+      max: parseInt(process.env.DB_MAX_CLIENTS, 10) || 20,
+    });
+    pool.on("error", (err) => {
+      logger.error("Unexpected error on idle client", err);
+    });
+    return pool;
+  }
+
   const connectionString = process.env.DATABASE_URL;
   if (process.env.NODE_ENV === "production" && !connectionString && (!process.env.DB_HOST || !process.env.DB_PASSWORD || !process.env.DB_NAME)) {
     throw new Error("DATABASE_URL or DB_HOST, DB_PASSWORD, and DB_NAME must be configured in production.");
   }
 
-  const config = connectionString
-    ? { connectionString }
-    : {
-      user: process.env.DB_USER || "postgres",
-      password: process.env.DB_PASSWORD || "postgres",
-      host: process.env.DB_HOST || "localhost",
-      port: process.env.DB_PORT || 5432,
-      database: process.env.DB_NAME || "kcca_ims",
-    };
-
-  Object.assign(config, {
+  const config = {
+    user: process.env.DB_USER || "postgres",
+    password: process.env.DB_PASSWORD || "postgres",
+    host: process.env.DB_HOST || "localhost",
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_NAME || "kcca_ims",
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 30000,
     max: 20,
-  });
-
-  if (process.env.DB_SSL === "true") {
-    config.ssl = { rejectUnauthorized: false };
-  }
+  };
 
   pool = new Pool(config);
 
@@ -54,7 +59,13 @@ const initializePool = () => {
  */
 const getPool = () => {
   if (!pool) {
-    initializePool();
+    try {
+      initializePool();
+    } catch (err) {
+      // If initialization fails, log and rethrow so callers can behave accordingly
+      logger.error("Failed to initialize DB pool", { error: err.message });
+      throw err;
+    }
   }
   return pool;
 };
@@ -64,7 +75,8 @@ const getPool = () => {
  */
 const testConnection = async () => {
   try {
-    const client = await getPool().connect();
+    const p = initializePool();
+    const client = await p.connect();
     const result = await client.query("SELECT NOW()");
     client.release();
     logger.info("Database connected successfully", { timestamp: result.rows[0] });
