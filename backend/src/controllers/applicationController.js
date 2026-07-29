@@ -7,6 +7,21 @@ const ensureTimelineColumn = async (client) => {
   await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
 };
 
+const applicationSelect = `
+  SELECT
+    a.*,
+    a.internship_id AS "internshipId",
+    a.applicant_id AS "applicantId",
+    a.submitted_at AS "submittedAt",
+    a.review_note AS "reviewNote",
+    i.title AS "internshipTitle",
+    i.department AS department,
+    u.name AS "applicantName",
+    u.gender AS gender
+  FROM applications a
+  JOIN internships i ON i.id = a.internship_id
+  JOIN users u ON u.id = a.applicant_id`;
+
 /**
  * Retrieve applications (with applicantId, internshipId, status filters)
  */
@@ -18,11 +33,11 @@ const getAllApplications = async (req, res) => {
     let idx = 1;
     // Applicants never choose the applicant ID filter; it is derived from their JWT.
     const effectiveApplicantId = isStaff(req.user) ? applicantId : req.user.id;
-    if (effectiveApplicantId) { clauses.push(`applicant_id = $${idx}`); params.push(effectiveApplicantId); idx++; }
-    if (internshipId) { clauses.push(`internship_id = $${idx}`); params.push(internshipId); idx++; }
-    if (status) { clauses.push(`LOWER(status) = $${idx}`); params.push(status.toLowerCase()); idx++; }
+    if (effectiveApplicantId) { clauses.push(`a.applicant_id = $${idx}`); params.push(effectiveApplicantId); idx++; }
+    if (internshipId) { clauses.push(`a.internship_id = $${idx}`); params.push(internshipId); idx++; }
+    if (status) { clauses.push(`LOWER(a.status) = $${idx}`); params.push(status.toLowerCase()); idx++; }
     const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
-    const q = `SELECT * FROM applications ${where} ORDER BY submitted_at DESC`;
+    const q = `${applicationSelect} ${where} ORDER BY a.submitted_at DESC`;
     const result = await pool.query(q, params);
     return res.status(200).json({ success: true, count: result.rowCount, data: result.rows });
   } catch (err) {
@@ -38,8 +53,8 @@ const getApplicationById = async (req, res) => {
   try {
     const { id } = req.params;
     const query = isStaff(req.user)
-      ? 'SELECT * FROM applications WHERE id = $1'
-      : 'SELECT * FROM applications WHERE id = $1 AND applicant_id = $2';
+      ? `${applicationSelect} WHERE a.id = $1`
+      : `${applicationSelect} WHERE a.id = $1 AND a.applicant_id = $2`;
     const result = await pool.query(query, isStaff(req.user) ? [id] : [id, req.user.id]);
     const item = result.rows[0];
     if (!item) return res.status(404).json({ success: false, message: 'Application not found.' });
