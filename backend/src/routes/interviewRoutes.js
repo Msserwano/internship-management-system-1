@@ -8,6 +8,7 @@ const {
   updateInterview,
   deleteInterview,
 } = require("../controllers/interviewController");
+const { requireAuth, requireRole } = require("../middleware/authJwt");
 
 // ── RETRIEVE (all / filtered) ─────────────────────────────────────────────
 // GET /api/interviews?applicationId=APP001&status=scheduled
@@ -19,14 +20,14 @@ router.get("/:id", getInterviewById);
 
 // ── WRITE / STORE (schedule new interview) ────────────────────────────────
 // POST /api/interviews  { applicationId, applicantName, date, time, venue, meetingLink }
-router.post("/", scheduleInterview);
+router.post("/", requireAuth, requireRole(["hr","admin"]), scheduleInterview);
 
 // ── EDIT / MODIFY (reschedule / update details) ───────────────────────────
 // PUT /api/interviews/:id  { date, time, venue, status, ... }
-router.put("/:id", updateInterview);
+router.put("/:id", requireAuth, requireRole(["hr","admin"]), updateInterview);
 
 // ── DELETE / CANCEL ────────────────────────────────────────────────────────
 // DELETE /api/interviews/:id
-router.delete("/:id", deleteInterview);
+router.delete("/:id", requireAuth, requireRole(["admin"]), deleteInterview);
 
 module.exports = router;

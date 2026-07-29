@@ -2,11 +2,23 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const helmet = require("helmet");
-const compression = require("compression");
 const path = require("path");
-const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./config/swagger");
+
+// Safe require for optional middleware to allow server start when deps missing
+const safeRequire = (name) => {
+  try {
+    return require(name);
+  } catch (err) {
+    // Use console.warn directly because logger may depend on other modules
+    console.warn(`[WARN] Optional dependency '${name}' is not installed. Feature disabled.`);
+    return null;
+  }
+};
+
+const helmet = safeRequire("helmet");
+const compression = safeRequire("compression");
+const swaggerUi = safeRequire("swagger-ui-express");
+const swaggerSpec = safeRequire("./config/swagger") || require("./config/swagger");
 const logger = require("./config/logger");
 
 // Middleware
@@ -24,8 +36,11 @@ const interviewRoutes = require("./routes/interviewRoutes");
 const app = express();
 
 // ── Security Middleware ────────────────────────────────────────────────────
-app.use(helmet());
-app.use(compression());
+if (helmet) app.use(helmet());
+else console.warn("[WARN] 'helmet' not available — skipping security headers middleware.");
+
+if (compression) app.use(compression());
+else console.warn("[WARN] 'compression' not available — skipping response compression.");
 
 // ── CORS Configuration ────────────────────────────────────────────────────
 const corsOptions = {
@@ -48,12 +63,16 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(requestLogger);
 
 // ── API Documentation ────────────────────────────────────────────────────────
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  swaggerOptions: {
-    docExpansion: "list",
-    supportedSubmitMethods: ["get", "post", "put", "delete", "patch"],
-  },
-}));
+if (swaggerUi) {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: {
+      docExpansion: "list",
+      supportedSubmitMethods: ["get", "post", "put", "delete", "patch"],
+    },
+  }));
+} else {
+  console.warn("[WARN] 'swagger-ui-express' not available — /api-docs disabled.");
+}
 
 // ── Health Check ────────────────────────────────────────────────────────────
 app.get("/api/health", (req, res) => {

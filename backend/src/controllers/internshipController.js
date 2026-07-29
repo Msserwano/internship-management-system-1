@@ -1,5 +1,6 @@
 // backend/src/controllers/internshipController.js
-const db = require("../config/db");
+const { getPool } = require("../config/database");
+const pool = getPool();
 
 /**
  * Retrieve all internships (with optional query filter e.g. ?department=ICT&search=software)
@@ -7,29 +8,32 @@ const db = require("../config/db");
 const getAllInternships = async (req, res) => {
   try {
     const { department, search, status } = req.query;
-    let items = await db.find("internships");
+    const clauses = [];
+    const params = [];
+    let idx = 1;
 
     if (department && department !== "all") {
-      items = items.filter((i) => i.department?.toLowerCase() === department.toLowerCase());
+      clauses.push(`LOWER(department) = $${idx}`);
+      params.push(department.toLowerCase());
+      idx++;
     }
-
     if (status) {
-      items = items.filter((i) => i.status?.toLowerCase() === status.toLowerCase());
+      clauses.push(`LOWER(status) = $${idx}`);
+      params.push(status.toLowerCase());
+      idx++;
     }
-
     if (search) {
-      const q = search.toLowerCase();
-      items = items.filter(
-        (i) =>
-          i.title?.toLowerCase().includes(q) ||
-          i.department?.toLowerCase().includes(q) ||
-          i.description?.toLowerCase().includes(q)
-      );
+      clauses.push(`(LOWER(title) LIKE $${idx} OR LOWER(department) LIKE $${idx} OR LOWER(description) LIKE $${idx})`);
+      params.push(`%${search.toLowerCase()}%`);
+      idx++;
     }
 
-    return res.status(200).json({ success: true, count: items.length, data: items });
+    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    const q = `SELECT * FROM internships ${where} ORDER BY posted_at DESC`;
+    const result = await pool.query(q, params);
+    return res.status(200).json({ success: true, count: result.rowCount, data: result.rows });
   } catch (err) {
-    console.error("[INTERNSHIP CONTROLLER] getAll failed:", err);
+    console.error("[INTERNSHIP CONTROLLER] getAll failed:", err.message);
     return res.status(500).json({ success: false, message: "Failed to retrieve internships." });
   }
 };
@@ -40,14 +44,13 @@ const getAllInternships = async (req, res) => {
 const getInternshipById = async (req, res) => {
   try {
     const { id } = req.params;
-    const item = await db.findById("internships", id);
-    if (!item) {
-      return res.status(404).json({ success: false, message: "Internship not found." });
-    }
+    const result = await pool.query('SELECT * FROM internships WHERE id = $1', [id]);
+    const item = result.rows[0];
+    if (!item) return res.status(404).json({ success: false, message: 'Internship not found.' });
     return res.status(200).json({ success: true, data: item });
   } catch (err) {
-    console.error("[INTERNSHIP CONTROLLER] getById failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to retrieve internship details." });
+    console.error('[INTERNSHIP CONTROLLER] getById failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve internship details.' });
   }
 };
 
@@ -57,34 +60,16 @@ const getInternshipById = async (req, res) => {
 const createInternship = async (req, res) => {
   try {
     const { title, department, description, vacancies, deadline, supervisor, duration, location } = req.body;
-
-    if (!title || !department || !description || !deadline) {
-      return res.status(400).json({ success: false, message: "Title, department, description, and deadline are required." });
-    }
-
-    const newPosting = await db.create("internships", {
-      id: `INT${String(Date.now()).slice(-4)}`,
-      title: title.trim(),
-      department: department.trim(),
-      description: description.trim(),
-      vacancies: Number(vacancies) || 1,
-      deadline,
-      supervisor: supervisor?.trim() || "HR Officer",
-      duration: duration || "3 Months",
-      location: location || "City Hall – Kampala",
-      status: "open",
-      posted: new Date().toISOString().split("T")[0],
-      applicantsCount: 0,
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: "Internship posting created successfully.",
-      data: newPosting,
-    });
+    if (!title || !department || !description || !deadline) return res.status(400).json({ success: false, message: 'Title, department, description, and deadline are required.' });
+    const id = `INT${String(Date.now()).slice(-6)}`;
+    const posted_at = new Date().toISOString().split('T')[0];
+    const q = `INSERT INTO internships (id, title, department, description, vacancies, deadline, supervisor, duration, location, status, posted_at, applicants_count, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW()) RETURNING *`;
+    const params = [id, title.trim(), department.trim(), description.trim(), Number(vacancies) || 1, deadline, supervisor || 'HR Officer', duration || '3 Months', location || 'City Hall – Kampala', 'open', posted_at, 0];
+    const result = await pool.query(q, params);
+    return res.status(201).json({ success: true, message: 'Internship posting created successfully.', data: result.rows[0] });
   } catch (err) {
-    console.error("[INTERNSHIP CONTROLLER] create failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to create internship posting." });
+    console.error('[INTERNSHIP CONTROLLER] create failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to create internship posting.' });
   }
 };
 
@@ -94,20 +79,27 @@ const createInternship = async (req, res) => {
 const updateInternship = async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = await db.findById("internships", id);
-    if (!existing) {
-      return res.status(404).json({ success: false, message: "Internship not found." });
+    const check = await pool.query('SELECT id FROM internships WHERE id = $1', [id]);
+    if (check.rowCount === 0) return res.status(404).json({ success: false, message: 'Internship not found.' });
+    const updates = req.body;
+    const allowed = ['title','department','description','vacancies','deadline','supervisor','duration','location','status'];
+    const sets = [];
+    const params = [];
+    let idx = 1;
+    for (const k of Object.keys(updates)) {
+      if (!allowed.includes(k)) continue;
+      params.push(updates[k]);
+      sets.push(`${k} = $${idx}`);
+      idx++;
     }
-
-    const updated = await db.update("internships", id, req.body);
-    return res.status(200).json({
-      success: true,
-      message: "Internship updated successfully.",
-      data: updated,
-    });
+    if (sets.length === 0) return res.status(400).json({ success: false, message: 'No valid fields to update.' });
+    params.push(id);
+    const q = `UPDATE internships SET ${sets.join(', ')}, updated_at=NOW() WHERE id = $${idx} RETURNING *`;
+    const result = await pool.query(q, params);
+    return res.status(200).json({ success: true, message: 'Internship updated successfully.', data: result.rows[0] });
   } catch (err) {
-    console.error("[INTERNSHIP CONTROLLER] update failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to update internship posting." });
+    console.error('[INTERNSHIP CONTROLLER] update failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to update internship posting.' });
   }
 };
 
@@ -117,14 +109,12 @@ const updateInternship = async (req, res) => {
 const deleteInternship = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await db.delete("internships", id);
-    if (!deleted) {
-      return res.status(404).json({ success: false, message: "Internship not found or already deleted." });
-    }
-    return res.status(200).json({ success: true, message: "Internship posting deleted successfully.", id });
+    const result = await pool.query('DELETE FROM internships WHERE id = $1 RETURNING id', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ success: false, message: 'Internship not found or already deleted.' });
+    return res.status(200).json({ success: true, message: 'Internship posting deleted successfully.', id: result.rows[0].id });
   } catch (err) {
-    console.error("[INTERNSHIP CONTROLLER] delete failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to delete internship posting." });
+    console.error('[INTERNSHIP CONTROLLER] delete failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to delete internship posting.' });
   }
 };
 

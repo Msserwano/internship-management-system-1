@@ -2,365 +2,173 @@
 const { sendVerificationEmail } = require("../config/mailer");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const fs = require("fs");
-const path = require("path");
+const { getPool } = require("../config/database");
 
-const DATA_FILE = path.join(__dirname, "../userStore.json");
 const JWT_SECRET = process.env.JWT_SECRET || "kcca_internship_jwt_secret_fallback";
 const JWT_EXPIRES = "7d";
 const SKIP_EMAIL_VERIFICATION = String(process.env.SKIP_EMAIL_VERIFICATION).toLowerCase() === "true";
 
-// In-memory user store + file persistence
-const userStore = new Map();
+const pool = getPool();
 
-/** Load users from file system on boot */
-const loadUserStore = () => {
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const data = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
-      for (const key in data) {
-        userStore.set(key, data[key]);
-      }
-    }
-  } catch (err) {
-    console.error("[AUTH] Error loading userStore.json:", err.message);
-  }
-};
-
-/** Persist users to file system */
-const saveUserStore = () => {
-  try {
-    const obj = {};
-    for (const [key, value] of userStore.entries()) {
-      obj[key] = value;
-    }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(obj, null, 2), "utf-8");
-  } catch (err) {
-    console.error("[AUTH] Error saving userStore.json:", err.message);
-  }
-};
-
-/** Seed default demo accounts if not already present */
-const seedDemoUsers = () => {
-  const defaultPasswordHash = bcrypt.hashSync("password123", 10);
-
-  const demoAccounts = [
-    {
-      firstName: "Sarah",
-      lastName: "Nakimuli",
-      email: "applicant@kcca.go.ug",
-      phone: "+256 701 234 567",
-      role: "applicant",
-      passwordHash: defaultPasswordHash,
-      isVerified: true,
-      createdAt: "2026-07-01T00:00:00.000Z",
-    },
-    {
-      firstName: "James",
-      lastName: "Ssemakula",
-      email: "hr@kcca.go.ug",
-      phone: "+256 703 456 789",
-      role: "hr",
-      passwordHash: defaultPasswordHash,
-      isVerified: true,
-      createdAt: "2025-01-15T00:00:00.000Z",
-    },
-    {
-      firstName: "Patricia",
-      lastName: "Nakato",
-      email: "admin@kcca.go.ug",
-      phone: "+256 704 789 012",
-      role: "admin",
-      passwordHash: defaultPasswordHash,
-      isVerified: true,
-      createdAt: "2024-06-01T00:00:00.000Z",
-    },
-  ];
-
-  let added = false;
-  for (const account of demoAccounts) {
-    if (!userStore.has(account.email)) {
-      userStore.set(account.email, account);
-      added = true;
-    }
-  }
-  if (added) {
-    saveUserStore();
-  }
-};
-
-// Initialize store & seed demo users
-loadUserStore();
-seedDemoUsers();
-
-/** Generate a random 6-digit OTP */
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-/** Strip sensitive fields before sending to client */
-const safeUser = (u) => ({
-  id: u.email,
-  firstName: u.firstName,
-  lastName: u.lastName,
-  name: `${u.firstName} ${u.lastName}`,
+const safeUserRow = (u) => ({
+  id: u.id,
+  name: u.name,
+  firstName: u.first_name || null,
+  lastName: u.last_name || null,
   email: u.email,
   phone: u.phone,
-  role: u.role || "applicant",
-  isVerified: u.isVerified,
-  createdAt: u.createdAt,
+  role: u.role,
+  isVerified: u.is_verified,
+  createdAt: u.created_at,
 });
 
-/* ─────────────────────────────────────────────────────────────
-   POST /api/auth/register
-───────────────────────────────────────────────────────────── */
+const ensureOtpColumns = async (client) => {
+  await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp VARCHAR(10)");
+  await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_expires_at TIMESTAMP NULL");
+};
+
 const registerUser = async (req, res) => {
+  const { firstName, lastName, email, phone, password, role } = req.body;
+  if (!email || !password || !firstName || !lastName) {
+    return res.status(400).json({ success: false, message: "All required fields must be provided." });
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const assignedRole = (role || "applicant").toLowerCase();
+  const autoVerify = SKIP_EMAIL_VERIFICATION || assignedRole === "applicant";
+
+  const client = await pool.connect();
   try {
-    const { firstName, lastName, email, phone, password, role } = req.body;
+    await ensureOtpColumns(client);
 
-    if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({ success: false, message: "All required fields must be provided." });
+    const userRes = await client.query("SELECT * FROM users WHERE email = $1", [normalizedEmail]);
+    const existing = userRes.rows[0];
+
+    if (existing && existing.is_verified) {
+      client.release();
+      return res.status(409).json({ success: false, message: "An account with this email already exists. Please log in." });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const existing = userStore.get(normalizedEmail);
-
-    // Block re-registration of already-verified accounts
-    if (existing && existing.isVerified) {
-      return res.status(409).json({
-        success: false,
-        message: "An account with this email already exists. Please log in.",
-      });
-    }
-
-    // Hash the password
     const passwordHash = await bcrypt.hash(password, 10);
-
-    // Allow immediate access for applicants or when SKIP_EMAIL_VERIFICATION=true
-    const assignedRole = (role || "applicant").toLowerCase();
-    const autoVerify = SKIP_EMAIL_VERIFICATION || assignedRole === "applicant";
+    const name = `${firstName.trim()} ${lastName.trim()}`;
 
     if (autoVerify) {
-      // Persist as verified account — no OTP required
-      userStore.set(normalizedEmail, {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: normalizedEmail,
-        phone: phone?.trim() || "",
-        passwordHash,
-        role: assignedRole,
-        isVerified: true,
-        createdAt: existing?.createdAt || new Date().toISOString(),
-      });
-
-      saveUserStore();
-
-      return res.status(201).json({
-        success: true,
-        message: "Registration successful. Your account is verified and you can log in.",
-        email: normalizedEmail,
-        deliveryMode: "auto-verified",
-      });
+      const id = existing ? existing.id : `U${String(Date.now()).slice(-6)}`;
+      if (existing) {
+        await client.query(
+          `UPDATE users SET name=$1, first_name=$2, last_name=$3, password_hash=$4, role=$5, phone=$6, is_verified=true, updated_at=NOW() WHERE email=$7`,
+          [name, firstName.trim(), lastName.trim(), passwordHash, assignedRole, phone || null, normalizedEmail]
+        );
+      } else {
+        await client.query(
+          `INSERT INTO users (id, name, first_name, last_name, email, password_hash, role, phone, is_verified) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+          [id, name, firstName.trim(), lastName.trim(), normalizedEmail, passwordHash, assignedRole, phone || null, true]
+        );
+      }
+      client.release();
+      return res.status(201).json({ success: true, message: "Registration successful. Your account is verified and you can log in.", email: normalizedEmail, deliveryMode: "auto-verified" });
     }
 
-    // Fallback: OTP verification flow for non-applicant roles
+    // OTP flow for non-applicant roles
     const otpCode = generateOTP();
-    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
+    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const id = existing ? existing.id : `U${String(Date.now()).slice(-6)}`;
 
-    // Persist to store (overwrite if previously unverified)
-    userStore.set(normalizedEmail, {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: normalizedEmail,
-      phone: phone?.trim() || "",
-      passwordHash,
-      role: assignedRole,
-      isVerified: false,
-      otp: otpCode,
-      otpExpiresAt,
-      createdAt: existing?.createdAt || new Date().toISOString(),
-    });
+    if (existing) {
+      await client.query(
+        `UPDATE users SET name=$1, first_name=$2, last_name=$3, password_hash=$4, role=$5, phone=$6, otp=$7, otp_expires_at=$8, updated_at=NOW() WHERE email=$9`,
+        [name, firstName.trim(), lastName.trim(), passwordHash, assignedRole, phone || null, otpCode, otpExpiresAt, normalizedEmail]
+      );
+    } else {
+      await client.query(
+        `INSERT INTO users (id, name, first_name, last_name, email, password_hash, role, phone, is_verified, otp, otp_expires_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [id, name, firstName.trim(), lastName.trim(), normalizedEmail, passwordHash, assignedRole, phone || null, false, otpCode, otpExpiresAt]
+      );
+    }
 
-    saveUserStore();
-
-    // Send verification email
     const emailResult = await sendVerificationEmail(normalizedEmail, otpCode, firstName.trim());
+    client.release();
 
-    const responsePayload = {
-      success: true,
-      message: "Registration successful! A 6-digit verification code has been sent to your email.",
-      email: normalizedEmail,
-      deliveryMode: emailResult.mode,
-    };
-
-    // In dev/console mode surface the code so the UI can display it as a toast
+    const responsePayload = { success: true, message: "Registration successful! A 6-digit verification code has been sent to your email.", email: normalizedEmail, deliveryMode: emailResult.mode };
     if (emailResult.mode === "console" || emailResult.mode === "fallback") {
       responsePayload.devCode = emailResult.code || otpCode;
       responsePayload.message = `Registration successful! (Dev Mode — your verification code is: ${emailResult.code || otpCode})`;
     }
-
     return res.status(201).json(responsePayload);
-  } catch (error) {
-    console.error("[AUTH] Register failed:", error);
+  } catch (err) {
+    client.release();
+    console.error("[AUTH] Register failed:", err.message);
     return res.status(500).json({ success: false, message: "Internal server error during registration." });
   }
 };
 
-/* ─────────────────────────────────────────────────────────────
-   POST /api/auth/verify-email
-───────────────────────────────────────────────────────────── */
 const verifyEmail = async (req, res) => {
   try {
     const { email, code } = req.body;
+    if (!email || !code) return res.status(400).json({ success: false, message: "Email and verification code are required." });
 
-    if (!email || !code) {
-      return res.status(400).json({ success: false, message: "Email and verification code are required." });
-    }
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const client = await pool.connect();
+    await ensureOtpColumns(client);
+    const userRes = await client.query("SELECT * FROM users WHERE email = $1", [normalizedEmail]);
+    const user = userRes.rows[0];
+    if (!user) { client.release(); return res.status(404).json({ success: false, message: "Account not found. Please register first." }); }
+    if (user.is_verified) { client.release(); return res.status(200).json({ success: true, message: "Email is already verified. You can sign in." }); }
+    if (!user.otp || String(user.otp) !== String(code).trim()) { client.release(); return res.status(400).json({ success: false, message: "Invalid verification code. Please check and try again." }); }
+    if (user.otp_expires_at && new Date() > new Date(user.otp_expires_at)) { client.release(); return res.status(400).json({ success: false, message: "Verification code has expired. Please request a new one." }); }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const user = userStore.get(normalizedEmail);
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: "Account not found. Please register first." });
-    }
-
-    if (user.isVerified) {
-      return res.status(200).json({ success: true, message: "Email is already verified. You can sign in." });
-    }
-
-    if (user.otp !== code.trim()) {
-      return res.status(400).json({ success: false, message: "Invalid verification code. Please check and try again." });
-    }
-
-    if (new Date() > new Date(user.otpExpiresAt)) {
-      return res.status(400).json({ success: false, message: "Verification code has expired. Please request a new one." });
-    }
-
-    // Mark as verified
-    user.isVerified = true;
-    user.otp = null;
-    user.otpExpiresAt = null;
-    user.verifiedAt = new Date().toISOString();
-    userStore.set(normalizedEmail, user);
-    saveUserStore();
-
-    return res.status(200).json({
-      success: true,
-      message: "Email verified successfully! You can now log in to your account.",
-      user: safeUser(user),
-    });
-  } catch (error) {
-    console.error("[AUTH] Verify email failed:", error);
+    await client.query("UPDATE users SET is_verified=true, otp=NULL, otp_expires_at=NULL, verified_at=NOW(), updated_at=NOW() WHERE email=$1", [normalizedEmail]);
+    const updatedRes = await client.query("SELECT id, name, first_name, last_name, email, phone, role, is_verified, created_at FROM users WHERE email = $1", [normalizedEmail]);
+    client.release();
+    return res.status(200).json({ success: true, message: "Email verified successfully! You can now log in to your account.", user: updatedRes.rows[0] });
+  } catch (err) {
+    console.error("[AUTH] Verify email failed:", err.message);
     return res.status(500).json({ success: false, message: "Internal server error during email verification." });
   }
 };
 
-/* ─────────────────────────────────────────────────────────────
-   POST /api/auth/resend-verification
-───────────────────────────────────────────────────────────── */
 const resendVerification = async (req, res) => {
   try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required." });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const user = userStore.get(normalizedEmail);
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: "Account not found. Please register first." });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ success: false, message: "Email is already verified. Please log in." });
-    }
-
-    const newOtp = generateOTP();
-    user.otp = newOtp;
-    user.otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    userStore.set(normalizedEmail, user);
-    saveUserStore();
-
-    const emailResult = await sendVerificationEmail(normalizedEmail, newOtp, user.firstName);
-
-    const responsePayload = {
-      success: true,
-      message: "A new verification code has been sent to your email.",
-      deliveryMode: emailResult.mode,
-    };
-
-    if (emailResult.mode === "console" || emailResult.mode === "fallback") {
-      responsePayload.devCode = emailResult.code || newOtp;
-      responsePayload.message = `New code sent! (Dev Mode — your new code is: ${emailResult.code || newOtp})`;
-    }
-
+    const { email } = req.body; if (!email) return res.status(400).json({ success: false, message: "Email is required." });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const client = await pool.connect();
+    await ensureOtpColumns(client);
+    const userRes = await client.query("SELECT * FROM users WHERE email = $1", [normalizedEmail]);
+    const user = userRes.rows[0];
+    if (!user) { client.release(); return res.status(404).json({ success: false, message: "Account not found. Please register first." }); }
+    if (user.is_verified) { client.release(); return res.status(400).json({ success: false, message: "Email is already verified. Please log in." }); }
+    const newOtp = generateOTP(); const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await client.query("UPDATE users SET otp=$1, otp_expires_at=$2, updated_at=NOW() WHERE email=$3", [newOtp, otpExpiresAt, normalizedEmail]);
+    const emailResult = await sendVerificationEmail(normalizedEmail, newOtp, user.first_name || user.firstName || 'Applicant');
+    client.release();
+    const responsePayload = { success: true, message: "A new verification code has been sent to your email.", deliveryMode: emailResult.mode };
+    if (emailResult.mode === "console" || emailResult.mode === "fallback") { responsePayload.devCode = emailResult.code || newOtp; responsePayload.message = `New code sent! (Dev Mode — your new code is: ${emailResult.code || newOtp})`; }
     return res.status(200).json(responsePayload);
-  } catch (error) {
-    console.error("[AUTH] Resend verification failed:", error);
-    return res.status(500).json({ success: false, message: "Failed to resend verification code." });
+  } catch (err) {
+    console.error("[AUTH] Resend verification failed:", err.message); return res.status(500).json({ success: false, message: "Failed to resend verification code." });
   }
 };
 
-/* ─────────────────────────────────────────────────────────────
-   POST /api/auth/login
-───────────────────────────────────────────────────────────── */
 const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: "Email and password are required." });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const user = userStore.get(normalizedEmail);
-
-    if (!user) {
-      return res.status(401).json({ success: false, message: "Invalid email or password." });
-    }
-
-    // Must verify email first
-    if (!user.isVerified) {
-      return res.status(403).json({
-        success: false,
-        message: "Your email address is not yet verified. Please check your inbox for the verification code.",
-        code: "EMAIL_NOT_VERIFIED",
-        email: normalizedEmail,
-      });
-    }
-
-    // Check password (supports bcrypt hash or plain text fallback for demo accounts)
-    let passwordMatch = false;
-    if (user.passwordHash) {
-      passwordMatch = await bcrypt.compare(password, user.passwordHash);
-    }
-    if (!passwordMatch && user.password && user.password === password) {
-      passwordMatch = true;
-    }
-
-    if (!passwordMatch) {
-      return res.status(401).json({ success: false, message: "Invalid email or password." });
-    }
-
-    // Issue JWT
-    const payload = safeUser(user);
+    const { email, password } = req.body; if (!email || !password) return res.status(400).json({ success: false, message: "Email and password are required." });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const client = await pool.connect();
+    const userRes = await client.query("SELECT * FROM users WHERE email = $1", [normalizedEmail]);
+    const user = userRes.rows[0];
+    if (!user) { client.release(); return res.status(401).json({ success: false, message: "Invalid email or password." }); }
+    if (!user.is_verified) { client.release(); return res.status(403).json({ success: false, message: "Your email address is not yet verified. Please check your inbox for the verification code.", code: "EMAIL_NOT_VERIFIED", email: normalizedEmail }); }
+    let passwordMatch = false; if (user.password_hash) passwordMatch = await bcrypt.compare(password, user.password_hash);
+    if (!passwordMatch) { client.release(); return res.status(401).json({ success: false, message: "Invalid email or password." }); }
+    const payload = { id: user.id, name: user.name, email: user.email, role: user.role };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
-
-    return res.status(200).json({
-      success: true,
-      message: "Login successful.",
-      token,
-      user: payload,
-    });
-  } catch (error) {
-    console.error("[AUTH] Login failed:", error);
-    return res.status(500).json({ success: false, message: "Internal server error during login." });
+    client.release();
+    return res.status(200).json({ success: true, message: "Login successful.", token, user: payload });
+  } catch (err) {
+    console.error("[AUTH] Login failed:", err.message); return res.status(500).json({ success: false, message: "Internal server error during login." });
   }
 };
 
-module.exports = {
-  registerUser,
-  verifyEmail,
-  resendVerification,
-  loginUser,
-};
+module.exports = { registerUser, verifyEmail, resendVerification, loginUser };

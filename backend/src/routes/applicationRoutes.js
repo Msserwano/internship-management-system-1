@@ -8,6 +8,7 @@ const {
   updateApplication,
   deleteApplication,
 } = require("../controllers/applicationController");
+const { requireAuth, requireRole } = require("../middleware/authJwt");
 
 // ── RETRIEVE (all / filtered) ─────────────────────────────────────────────
 // GET /api/applications?applicantId=U001&internshipId=INT001&status=shortlisted
@@ -19,14 +20,14 @@ router.get("/:id", getApplicationById);
 
 // ── WRITE / STORE (submit new application) ────────────────────────────────
 // POST /api/applications  { internshipId, applicantId, university, course, gpa }
-router.post("/", submitApplication);
+router.post("/", requireAuth, requireRole(["applicant","hr","admin"]), submitApplication);
 
 // ── EDIT / MODIFY (update status / review note) ───────────────────────────
 // PUT /api/applications/:id  { status, reviewNote, ... }
-router.put("/:id", updateApplication);
+router.put("/:id", requireAuth, requireRole(["hr","admin"]), updateApplication);
 
 // ── DELETE ─────────────────────────────────────────────────────────────────
 // DELETE /api/applications/:id
-router.delete("/:id", deleteApplication);
+router.delete("/:id", requireAuth, requireRole(["admin"]), deleteApplication);
 
 module.exports = router;

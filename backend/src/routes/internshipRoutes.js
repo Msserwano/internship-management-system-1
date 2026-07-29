@@ -8,11 +8,12 @@ const {
   updateInternship,
   deleteInternship,
 } = require("../controllers/internshipController");
+const { requireAuth, requireRole } = require("../middleware/authJwt");
 
 router.get("/",       getAllInternships);
 router.get("/:id",    getInternshipById);
-router.post("/",      createInternship);
-router.put("/:id",    updateInternship);
-router.delete("/:id", deleteInternship);
+router.post("/",      requireAuth, requireRole(["hr","admin"]), createInternship);
+router.put("/:id",    requireAuth, requireRole(["hr","admin"]), updateInternship);
+router.delete("/:id", requireAuth, requireRole(["admin"]), deleteInternship);
 
 module.exports = router;

@@ -28,5 +28,15 @@
     "passwordHash": "$2a$10$VQoVFMFimeRnHR/WWPyo5.QWr/RJtIPpTsoFoKG38joxW9jQSp34q",
     "isVerified": true,
     "createdAt": "2024-06-01T00:00:00.000Z"
+  },
+  "sserwanomoris@gmail.com": {
+    "firstName": "SSERWANO",
+    "lastName": "MORIS",
+    "email": "sserwanomoris@gmail.com",
+    "phone": "0756481468",
+    "passwordHash": "$2a$10$6G70pITZ257OG7mtpn9EMuKhp7TZntJkLOq5T7RUMa./E5ggvdLNC",
+    "role": "applicant",
+    "isVerified": true,
+    "createdAt": "2026-07-29T15:59:38.398Z"
   }
 }

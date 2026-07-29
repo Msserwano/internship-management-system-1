@@ -1,5 +1,6 @@
 // backend/src/controllers/interviewController.js
-const db = require("../config/db");
+const { getPool } = require("../config/database");
+const pool = getPool();
 
 /**
  * Retrieve interviews (with optional status/applicationId filter)
@@ -7,20 +8,18 @@ const db = require("../config/db");
 const getAllInterviews = async (req, res) => {
   try {
     const { applicationId, status } = req.query;
-    let items = await db.find("interviews");
-
-    if (applicationId) {
-      items = items.filter((i) => String(i.applicationId) === String(applicationId));
-    }
-
-    if (status) {
-      items = items.filter((i) => i.status?.toLowerCase() === status.toLowerCase());
-    }
-
-    return res.status(200).json({ success: true, count: items.length, data: items });
+    const clauses = [];
+    const params = [];
+    let idx = 1;
+    if (applicationId) { clauses.push(`application_id = $${idx}`); params.push(applicationId); idx++; }
+    if (status) { clauses.push(`LOWER(status) = $${idx}`); params.push(status.toLowerCase()); idx++; }
+    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    const q = `SELECT * FROM interviews ${where} ORDER BY interview_date DESC`;
+    const result = await pool.query(q, params);
+    return res.status(200).json({ success: true, count: result.rowCount, data: result.rows });
   } catch (err) {
-    console.error("[INTERVIEW CONTROLLER] getAll failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to retrieve interviews." });
+    console.error('[INTERVIEW CONTROLLER] getAll failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve interviews.' });
   }
 };
 
@@ -30,14 +29,13 @@ const getAllInterviews = async (req, res) => {
 const getInterviewById = async (req, res) => {
   try {
     const { id } = req.params;
-    const item = await db.findById("interviews", id);
-    if (!item) {
-      return res.status(404).json({ success: false, message: "Interview record not found." });
-    }
+    const result = await pool.query('SELECT * FROM interviews WHERE id = $1', [id]);
+    const item = result.rows[0];
+    if (!item) return res.status(404).json({ success: false, message: 'Interview record not found.' });
     return res.status(200).json({ success: true, data: item });
   } catch (err) {
-    console.error("[INTERVIEW CONTROLLER] getById failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to retrieve interview details." });
+    console.error('[INTERVIEW CONTROLLER] getById failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve interview details.' });
   }
 };
 
@@ -47,38 +45,27 @@ const getInterviewById = async (req, res) => {
 const scheduleInterview = async (req, res) => {
   try {
     const { applicationId, applicantName, internshipTitle, department, date, time, venue, meetingLink, instructions } = req.body;
-
-    if (!applicationId || !date || !time || !venue) {
-      return res.status(400).json({ success: false, message: "Application, date, time, and venue are required." });
+    if (!applicationId || !date || !time || !venue) return res.status(400).json({ success: false, message: 'Application, date, time, and venue are required.' });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const id = `IVW${String(Date.now()).slice(-6)}`;
+      const q = `INSERT INTO interviews (id, application_id, interview_date, interview_time, venue, meeting_link, status, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,NOW()) RETURNING *`;
+      const params = [id, applicationId, date, time, venue.trim(), meetingLink || null, 'scheduled'];
+      const resIns = await client.query(q, params);
+      // update application status
+      await client.query('UPDATE applications SET status = $1, updated_at=NOW() WHERE id = $2', ['interview', applicationId]);
+      await client.query('COMMIT');
+      client.release();
+      return res.status(201).json({ success: true, message: 'Interview scheduled successfully.', data: resIns.rows[0] });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      client.release();
+      throw err;
     }
-
-    const newInterview = await db.create("interviews", {
-      id: `IVW${String(Date.now()).slice(-4)}`,
-      applicationId,
-      applicantName: applicantName || "Applicant",
-      internshipTitle: internshipTitle || "Internship Position",
-      department: department || "General",
-      date,
-      time,
-      venue: venue.trim(),
-      meetingLink: meetingLink?.trim() || null,
-      instructions: instructions || "Please bring original academic documents and ID.",
-      status: "scheduled",
-    });
-
-    // Update application status to 'interview'
-    if (applicationId) {
-      await db.update("applications", applicationId, { status: "interview" });
-    }
-
-    return res.status(201).json({
-      success: true,
-      message: "Interview scheduled successfully.",
-      data: newInterview,
-    });
   } catch (err) {
-    console.error("[INTERVIEW CONTROLLER] schedule failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to schedule interview." });
+    console.error('[INTERVIEW CONTROLLER] schedule failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to schedule interview.' });
   }
 };
 
@@ -88,20 +75,27 @@ const scheduleInterview = async (req, res) => {
 const updateInterview = async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = await db.findById("interviews", id);
-    if (!existing) {
-      return res.status(404).json({ success: false, message: "Interview not found." });
+    const check = await pool.query('SELECT id FROM interviews WHERE id = $1', [id]);
+    if (check.rowCount === 0) return res.status(404).json({ success: false, message: 'Interview not found.' });
+    const updates = req.body;
+    const allowed = ['interview_date','interview_time','venue','meeting_link','status','instructions'];
+    const sets = [];
+    const params = [];
+    let idx = 1;
+    for (const k of Object.keys(updates)) {
+      if (!allowed.includes(k)) continue;
+      params.push(updates[k]);
+      sets.push(`${k} = $${idx}`);
+      idx++;
     }
-
-    const updated = await db.update("interviews", id, req.body);
-    return res.status(200).json({
-      success: true,
-      message: "Interview schedule updated successfully.",
-      data: updated,
-    });
+    if (sets.length === 0) return res.status(400).json({ success: false, message: 'No valid fields to update.' });
+    params.push(id);
+    const q = `UPDATE interviews SET ${sets.join(', ')}, updated_at=NOW() WHERE id = $${idx} RETURNING *`;
+    const result = await pool.query(q, params);
+    return res.status(200).json({ success: true, message: 'Interview schedule updated successfully.', data: result.rows[0] });
   } catch (err) {
-    console.error("[INTERVIEW CONTROLLER] update failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to update interview details." });
+    console.error('[INTERVIEW CONTROLLER] update failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to update interview details.' });
   }
 };
 
@@ -111,14 +105,12 @@ const updateInterview = async (req, res) => {
 const deleteInterview = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await db.delete("interviews", id);
-    if (!deleted) {
-      return res.status(404).json({ success: false, message: "Interview record not found or already deleted." });
-    }
-    return res.status(200).json({ success: true, message: "Interview record deleted successfully.", id });
+    const result = await pool.query('DELETE FROM interviews WHERE id = $1 RETURNING id', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ success: false, message: 'Interview record not found or already deleted.' });
+    return res.status(200).json({ success: true, message: 'Interview record deleted successfully.', id: result.rows[0].id });
   } catch (err) {
-    console.error("[INTERVIEW CONTROLLER] delete failed:", err);
-    return res.status(500).json({ success: false, message: "Failed to delete interview record." });
+    console.error('[INTERVIEW CONTROLLER] delete failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to delete interview record.' });
   }
 };
 
