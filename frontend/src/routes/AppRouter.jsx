@@ -29,6 +29,7 @@ import Notifications        from "../pages/applicant/Notifications";
 import HRDashboard      from "../pages/hr/Dashboard";
 import HRInternships    from "../pages/hr/Internships";
 import HRApplications   from "../pages/hr/Applications";
+import HRNotifications  from "../pages/hr/Notifications";
 import HRApplicants     from "../pages/hr/Applicants";
 import HRDepartments    from "../pages/hr/Departments";
 import HRInterviews     from "../pages/hr/Interviews";
@@ -101,6 +102,7 @@ const AppRouter = () => (
         <Route path="dashboard"    element={<HRDashboard />} />
         <Route path="internships"  element={<HRInternships />} />
         <Route path="applications" element={<HRApplications />} />
+        <Route path="notifications" element={<HRNotifications />} />
         <Route path="applicants"   element={<HRApplicants />} />
         <Route path="departments"  element={<HRDepartments />} />
         <Route path="interviews"   element={<HRInterviews />} />
