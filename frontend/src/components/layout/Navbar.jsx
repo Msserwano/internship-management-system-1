@@ -10,6 +10,7 @@ import { fRelative } from "../../utils/formatters";
 import { cn } from "../../utils/cn";
 
 const NotifIcon = { success:"bg-green-100 text-green-600", info:"bg-blue-100 text-blue-600", warning:"bg-yellow-100 text-yellow-600", error:"bg-red-100 text-red-600" };
+const typeMap = { application_submitted: 'info', application_assigned: 'success' };
 
 const Navbar = ({ collapsed, setMobileOpen }) => {
   const { user, logout } = useAuth();
@@ -82,20 +83,23 @@ const Navbar = ({ collapsed, setMobileOpen }) => {
                   {unread > 0 && <button onClick={markAllRead} className="text-xs text-primary-500 hover:underline">Mark all read</button>}
                 </div>
                 <div className="max-h-72 overflow-y-auto divide-y divide-slate-50 dark:divide-slate-700">
-                  {notifications.slice(0,6).map(n => (
-                    <div key={n.id} onClick={() => markRead(n.id)}
-                      className={cn("px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition", !n.read && "bg-primary-50/50 dark:bg-primary-900/10")}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", !n.read ? "bg-primary-500":"bg-slate-300")} />
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{n.title}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">{n.message}</p>
-                          <p className="text-[10px] text-slate-400 mt-1">{fRelative(n.createdAt)}</p>
+                  {notifications.slice(0,6).map(n => {
+                    const kind = typeMap[n.type] || 'info';
+                    return (
+                      <div key={n.id} onClick={() => markRead(n.id)}
+                        className={cn("px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition", !n.isRead && "bg-primary-50/50 dark:bg-primary-900/10")}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0", NotifIcon[kind])}>{n.type === 'application_assigned' ? 'A' : 'N'}</div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{n.title || n.type.replace(/_/g,' ')}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">{n.message || (n.payload?.applicationId ? `Application ${n.payload.applicationId}` : '')}</p>
+                            <p className="text-[10px] text-slate-400 mt-1">{fRelative(n.createdAt)}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-700 text-center">
                   <Link to={`${rolePrefix[user?.role]}/notifications`} onClick={() => setNotifOpen(false)} className="text-xs text-primary-500 hover:underline">

@@ -223,7 +223,10 @@ const HRApplications = () => {
                   <td>{app.university}</td>
                   <td><span className="font-semibold text-primary-600">{app.gpa}</span></td>
                   <td><Badge status={app.status} /></td>
-                  <td>{app.assigned_hr_id || '—'}</td>
+                  <td className="flex items-center gap-2">
+                    <Avatar name={app.assignedHrName || ''} src={app.assignedHrAvatar} size="sm" />
+                    <span>{app.assignedHrName || '—'}</span>
+                  </td>
                   <td className="text-xs text-slate-400">{fDate(app.submittedAt)}</td>
                   <td>
                     <Button variant="ghost" size="xs" onClick={() => setSelectedApp(app)} icon={Eye}>

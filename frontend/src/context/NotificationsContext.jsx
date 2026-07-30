@@ -9,13 +9,20 @@ export function NotificationsProvider({ children }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (p = 1) => {
     if (!user) return setNotifications([]);
     setLoading(true);
     try {
-      const res = await notificationService.getAll();
-      setNotifications(res.data || []);
+      const res = await notificationService.getAll({ page: p, limit: 10 });
+      const body = res.data || {};
+      const items = body.data || [];
+      if (p > 1) setNotifications((prev) => [...prev, ...items]);
+      else setNotifications(items);
+      setPage(body.page || p);
+      setHasMore((body.count || 0) > ((body.page || p) * (body.limit || 10)));
     } catch (err) {
       console.error('[NOTIFICATIONS] fetch failed', err);
     } finally {
@@ -43,16 +50,26 @@ export function NotificationsProvider({ children }) {
 
   const markAllRead = async () => {
     try {
-      const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
-      await Promise.all(unreadIds.map(id => notificationService.markRead(id)));
+      if (notificationService.markAllRead) {
+        await notificationService.markAllRead();
+      } else {
+        const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
+        await Promise.all(unreadIds.map(id => notificationService.markRead(id)));
+      }
       setNotifications((prev) => prev.map(n => ({ ...n, isRead: true })));
     } catch (err) {
       console.error('[NOTIFICATIONS] markAllRead failed', err);
     }
   };
 
+  const loadMore = async () => {
+    if (!hasMore) return;
+    const next = page + 1;
+    await fetchNotifications(next);
+  };
+
   return (
-    <NotificationsContext.Provider value={{ notifications, loading, fetchNotifications, unread, markRead, markAllRead }}>
+    <NotificationsContext.Provider value={{ notifications, loading, fetchNotifications, unread, markRead, markAllRead, loadMore, hasMore }}>
       {children}
     </NotificationsContext.Provider>
   );

@@ -9,4 +9,7 @@ router.get('/', requireAuth, getNotifications);
 // PUT /api/notifications/:id/read
 router.put('/:id/read', requireAuth, markAsRead);
 
+// PUT /api/notifications/mark-all-read
+router.put('/mark-all-read', requireAuth, require('../controllers/notificationController').markAllRead);
+
 module.exports = router;

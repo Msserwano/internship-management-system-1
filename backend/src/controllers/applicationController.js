@@ -18,10 +18,13 @@ const applicationSelect = `
     i.title AS "internshipTitle",
     i.department AS department,
     u.name AS "applicantName",
-    u.gender AS gender
+    u.gender AS gender,
+    ur.name AS "assignedHrName",
+    ur.avatar AS "assignedHrAvatar"
   FROM applications a
   JOIN internships i ON i.id = a.internship_id
-  LEFT JOIN users u ON u.id = a.applicant_id`;
+  LEFT JOIN users u ON u.id = a.applicant_id
+  LEFT JOIN users ur ON ur.id = a.assigned_hr_id`;
 
 /**
  * Retrieve applications (with applicantId, internshipId, status filters)
