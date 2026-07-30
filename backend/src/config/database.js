@@ -222,13 +222,6 @@ const seedDemoUsers = async () => {
   const client = await getPool().connect();
 
   try {
-    const result = await client.query("SELECT COUNT(*) as count FROM users");
-
-    if (result.rows[0].count > 0) {
-      logger.info("Database already has users, skipping seed");
-      return;
-    }
-
     const passwordHash = await bcrypt.hash("password123", 10);
 
     const demoUsers = [
@@ -272,7 +265,8 @@ const seedDemoUsers = async () => {
     for (const user of demoUsers) {
       await client.query(
         `INSERT INTO users (id, name, first_name, last_name, email, password_hash, role, phone, gender, district, is_verified)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (email) DO NOTHING`,
         [
           user.id,
           user.name,

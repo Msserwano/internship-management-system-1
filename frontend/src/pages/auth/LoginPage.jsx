@@ -13,12 +13,10 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  // Unverified email flow removed — accounts are auto-verified in development
   const { register, handleSubmit, setValue, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
     setLoading(true);
-    setUnverifiedEmail(null);
     try {
       const user = await login(data.email, data.password);
       const displayName = user.firstName || user.name?.split(" ")[0] || "there";
