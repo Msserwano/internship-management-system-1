@@ -9,8 +9,7 @@ import api from "./axios";
 export const authService = {
   register:           (data) => api.post("/auth/register", data),
   login:              (data) => api.post("/auth/login", data),
-  verifyEmail:        (data) => api.post("/auth/verify-email", data),
-  resendVerification: (data) => api.post("/auth/resend-verification", data),
+  // Email verification endpoints removed — registration is auto-verified in development
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -13,7 +13,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [unverifiedEmail, setUnverifiedEmail] = useState(null);
+  // Unverified email flow removed — accounts are auto-verified in development
   const { register, handleSubmit, setValue, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
@@ -26,12 +26,7 @@ const LoginPage = () => {
       const redirects = { applicant:"/applicant/dashboard", hr:"/hr/dashboard", admin:"/admin/dashboard" };
       navigate(redirects[user.role] || "/applicant/dashboard");
     } catch (err) {
-      if (err.code === "EMAIL_NOT_VERIFIED") {
-        // Surface a targeted banner instead of a generic toast
-        setUnverifiedEmail(err.email || data.email);
-      } else {
-        toast.error(err.message || "Login failed. Please check your credentials.");
-      }
+      toast.error(err.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -56,33 +51,7 @@ const LoginPage = () => {
             <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-1">Welcome back</h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">Sign in to continue to your portal.</p>
 
-            {/* Email not verified banner */}
-            <AnimatePresence>
-              {unverifiedEmail && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                  className="mb-5 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl flex gap-3"
-                >
-                  <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Email not verified</p>
-                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 break-words">
-                      Please verify <strong>{unverifiedEmail}</strong> before logging in.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => navigate("/verify-email", { state: { email: unverifiedEmail } })}
-                      className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:underline"
-                    >
-                      <MailCheck className="w-3.5 h-3.5" />
-                      Verify Email Now →
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Email verification removed — accounts are auto-verified in development */}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>

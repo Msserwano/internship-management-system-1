@@ -21,10 +21,6 @@ const authSchemas = {
     password: z.string().min(1, "Password is required"),
   }),
 
-  verifyEmail: z.object({
-    email: z.string().email("Invalid email address"),
-    otp: z.string().length(6, "OTP must be 6 digits"),
-  }),
 
   resetPassword: z.object({
     email: z.string().email("Invalid email address"),

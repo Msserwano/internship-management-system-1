@@ -18,14 +18,12 @@ const RegisterPage = () => {
     setLoading(true);
     try {
       const res = await api.post("/auth/register", formData);
-      sessionStorage.setItem("pending_verify_email", formData.email);
-      toast.success(res.data.message || "Account created! Please verify your email.");
-      navigate("/verify-email", { state: { email: formData.email } });
+      toast.success(res.data.message || "Account created! You can now sign in.");
+      navigate("/login");
     } catch (err) {
       console.warn("Backend registration endpoint unavailable or returned error, falling back to local workflow:", err);
-      sessionStorage.setItem("pending_verify_email", formData.email);
-      toast.success("Account created! Please verify your email.");
-      navigate("/verify-email", { state: { email: formData.email } });
+      toast.success("Account created! You can now sign in.");
+      navigate("/login");
     } finally {
       setLoading(false);
     }

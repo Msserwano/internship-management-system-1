@@ -12,7 +12,6 @@ import LoginPage        from "../pages/auth/LoginPage";
 import RegisterPage     from "../pages/auth/RegisterPage";
 import ForgotPassword   from "../pages/auth/ForgotPassword";
 import ResetPassword    from "../pages/auth/ResetPassword";
-import EmailVerification from "../pages/auth/EmailVerification";
 
 // Applicant pages
 import ApplicantDashboard   from "../pages/applicant/Dashboard";
@@ -80,7 +79,6 @@ const AppRouter = () => (
       <Route path="/register"          element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/forgot-password"   element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       <Route path="/reset-password"    element={<ResetPassword />} />
-      <Route path="/verify-email"      element={<EmailVerification />} />
 
       {/* Applicant */}
       <Route path="/applicant" element={<ProtectedRoute allowedRoles={["applicant"]}><DashboardLayout /></ProtectedRoute>}>

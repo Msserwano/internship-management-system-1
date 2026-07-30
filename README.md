@@ -38,7 +38,7 @@ npm start
 
 ## Features Included
 - **Landing Page**: Hero banner, live stats, feature cards, department tags, open vacancies preview, testimonials, footer.
-- **Authentication**: Role-based Login, Registration, Password Reset, Email Verification OTP.
+-- **Authentication**: Role-based Login, Registration, Password Reset.
 - **Applicant Portal**: Dashboard matching reference design, Internship browser with search & filters, 5-Step Application Wizard, Application Timeline & Offer download, Interview Module, Document Repository, Messaging, Profile editor, Settings, Notifications.
 - **HR Officer Portal**: Dashboard with KPI cards & Chart.js visualizations, Internship posting CRUD, Advanced Application filtering & bulk actions, Interview scheduling with SMS/Email reminders, PDF/Excel/CSV report generation.
 - **System Admin Portal**: Role & Permissions matrix, User management, Audit trail logs, System backup & database restore.
