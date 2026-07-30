@@ -64,3 +64,26 @@ Place SQL migration files under `database/migrations/` and use the included `bac
 Notes:
 - Ensure `JWT_SECRET` is set to a strong secret in production.
 - For SMTP, prefer a dedicated email service or Gmail App Password with `SMTP_HOST`/`SMTP_PORT` configured.
+
+## CI/CD & Kubernetes
+
+- CI now includes image build & push and a migrations job; configure repository secrets:
+	- `GITHUB_TOKEN` (provided by GitHub Actions automatically) is used to push to GitHub Container Registry (GHCR).
+	- `DATABASE_URL` — required for the migrations job.
+	- For publishing to external registries (Docker Hub) add suitable secrets.
+
+To deploy to Kubernetes (example):
+1. Create namespace and secrets from `k8s/secret.yaml.template` (fill values).
+2. Apply manifests:
+
+```bash
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/backend-deployment.yaml
+kubectl apply -f k8s/backend-service.yaml
+kubectl apply -f k8s/frontend-deployment.yaml
+kubectl apply -f k8s/frontend-service.yaml
+kubectl apply -f k8s/ingress.yaml
+```
+
+You'll need an ingress controller (e.g. nginx) and DNS pointing `kcca.example.com` to the ingress.
