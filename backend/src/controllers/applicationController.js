@@ -20,7 +20,7 @@ const applicationSelect = `
     u.gender AS gender
   FROM applications a
   JOIN internships i ON i.id = a.internship_id
-  JOIN users u ON u.id = a.applicant_id`;
+  LEFT JOIN users u ON u.id = a.applicant_id`;
 
 /**
  * Retrieve applications (with applicantId, internshipId, status filters)
@@ -87,7 +87,8 @@ const submitApplication = async (req, res) => {
       const id = `APP${String(Date.now()).slice(-6)}`;
       const timeline = [{ status: 'submitted', date: new Date().toISOString(), note: 'Application submitted successfully.' }];
       const q = `INSERT INTO applications (id, internship_id, applicant_id, university, course, gpa, status, review_note, submitted_at, timeline, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW()) RETURNING *`;
-      const params = [id, internshipId, req.user.id, university, course, gpa || null, 'submitted', null, new Date().toISOString(), JSON.stringify(timeline)];
+      const applicantId = req.user && req.user.id ? req.user.id : null;
+      const params = [id, internshipId, applicantId, university, course, gpa || null, 'submitted', null, new Date().toISOString(), JSON.stringify(timeline)];
       const appRes = await client.query(q, params);
 
       await client.query('UPDATE internships SET applicants_count = COALESCE(applicants_count,0) + 1, updated_at=NOW() WHERE id = $1', [internshipId]);

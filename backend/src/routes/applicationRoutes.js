@@ -20,7 +20,8 @@ router.get("/:id", requireAuth, getApplicationById);
 
 // ── WRITE / STORE (submit new application) ────────────────────────────────
 // POST /api/applications  { internshipId, applicantId, university, course, gpa }
-router.post("/", requireAuth, requireRole(["applicant"]), submitApplication);
+// Allow public submissions (everyone can apply). Authenticated users still work.
+router.post("/", submitApplication);
 
 // ── EDIT / MODIFY (update status / review note) ───────────────────────────
 // PUT /api/applications/:id  { status, reviewNote, ... }

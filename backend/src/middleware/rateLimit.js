@@ -69,14 +69,22 @@ const rateLimit = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
 };
 
 /**
- * Strict rate limiter for auth endpoints
+ * No-op middleware used when rate limiting is disabled via env var.
  */
-const authRateLimit = rateLimit(5, 15 * 60 * 1000); // 5 requests per 15 minutes
+const noop = (req, res, next) => next();
 
 /**
- * Standard rate limiter for general API
+ * Allow disabling rate limiting by setting DISABLE_RATE_LIMIT=true
  */
-const apiRateLimit = rateLimit(100, 15 * 60 * 1000); // 100 requests per 15 minutes
+const isDisabled = process.env.DISABLE_RATE_LIMIT === "true";
+
+const authRateLimit = isDisabled
+  ? noop
+  : rateLimit(5, 15 * 60 * 1000); // 5 requests per 15 minutes
+
+const apiRateLimit = isDisabled
+  ? noop
+  : rateLimit(100, 15 * 60 * 1000); // 100 requests per 15 minutes
 
 const resetRateLimits = () => requests.clear();
 
