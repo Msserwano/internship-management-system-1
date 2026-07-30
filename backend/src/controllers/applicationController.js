@@ -1,5 +1,6 @@
 // backend/src/controllers/applicationController.js
 const { getPool } = require("../config/database");
+const { sendNotificationEmail } = require("../config/mailer");
 const pool = getPool();
 const isStaff = (user) => ["hr", "admin"].includes(String(user?.role).toLowerCase());
 
@@ -94,6 +95,38 @@ const submitApplication = async (req, res) => {
       await client.query('UPDATE internships SET applicants_count = COALESCE(applicants_count,0) + 1, updated_at=NOW() WHERE id = $1', [internshipId]);
 
       await client.query('COMMIT');
+
+      // Notify HR users about the new application (non-blocking)
+      (async () => {
+        try {
+          const hrRes = await pool.query("SELECT email, name FROM users WHERE LOWER(role) = 'hr' AND (status IS NULL OR LOWER(status) = 'active')");
+          if (hrRes.rowCount > 0) {
+            const app = appRes.rows[0];
+            const internshipTitle = internship.title || 'Internship';
+            const applicantDisplay = req.user && req.user.name ? req.user.name : (app.applicant_id ? `Applicant ${app.applicant_id}` : 'Anonymous');
+            const subject = `New application submitted for ${internshipTitle}`;
+            const frontendUrl = process.env.FRONTEND_URL || '';
+            const viewLink = frontendUrl ? `${frontendUrl.replace(/\/$/, '')}/admin/applications/${app.id}` : '';
+            const html = `
+              <p>A new application has been submitted for <strong>${internshipTitle}</strong>.</p>
+              <p><strong>Applicant:</strong> ${applicantDisplay}</p>
+              <p><strong>University:</strong> ${app.university || 'N/A'}</p>
+              <p><strong>Course:</strong> ${app.course || 'N/A'}</p>
+              <p><strong>GPA:</strong> ${app.gpa || 'N/A'}</p>
+              ${viewLink ? `<p><a href="${viewLink}">View application</a></p>` : ''}
+            `;
+            const notify = hrRes.rows.map(h => sendNotificationEmail(h.email, subject, html, `New application for ${internshipTitle}`));
+            const results = await Promise.allSettled(notify);
+            results.forEach((r, i) => {
+              if (r.status === 'fulfilled') console.log(`[NOTIFY] Email sent to ${hrRes.rows[i].email}`);
+              else console.error(`[NOTIFY] Failed to send to ${hrRes.rows[i].email}:`, r.reason || r);
+            });
+          }
+        } catch (err) {
+          console.error('[APPLICATION CONTROLLER] HR notification failed:', err.message || err);
+        }
+      })();
+
       return res.status(201).json({ success: true, message: 'Application submitted successfully.', data: appRes.rows[0] });
     } catch (err) {
       await client.query('ROLLBACK');

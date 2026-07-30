@@ -87,4 +87,34 @@ const sendVerificationEmail = async (toEmail, otpCode, firstName = "Applicant") 
 
 module.exports = {
   sendVerificationEmail,
+  /**
+   * Send a generic notification email (used for HR notifications)
+   */
+  sendNotificationEmail: async (toEmail, subject, htmlContent, textContent = '') => {
+    const transporter = createTransporter();
+
+    if (!transporter) {
+      console.log(`\n[MAILER SIMULATION MODE] Notification`);
+      console.log(`To: ${toEmail}`);
+      console.log(`Subject: ${subject}`);
+      if (textContent) console.log(`Text: ${textContent}`);
+      console.log(`HTML: ${htmlContent}\n`);
+      return { success: true, mode: 'console' };
+    }
+
+    try {
+      const info = await transporter.sendMail({
+        from: process.env.EMAIL_FROM || `KCCA Internship Portal <${process.env.EMAIL_USER}>`,
+        to: toEmail,
+        subject,
+        text: textContent,
+        html: htmlContent,
+      });
+      console.log(`[MAILER] Notification email sent to ${toEmail}. Message ID: ${info.messageId}`);
+      return { success: true, mode: 'smtp', messageId: info.messageId };
+    } catch (error) {
+      console.error(`[MAILER ERROR] Failed to send notification to ${toEmail}:`, error.message);
+      return { success: false, error: error.message, mode: 'fallback' };
+    }
+  },
 };
