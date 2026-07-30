@@ -262,7 +262,15 @@ const seedDemoUsers = async () => {
       },
     ];
 
-    for (const user of demoUsers) {
+    const additionalApplicants = [
+      { id: "U004", name: "Alex Ssebaggala", first_name: "Alex", last_name: "Ssebaggala", email: "alex.ssebaggala@gmail.com", password_hash: passwordHash, role: "applicant", phone: "+256 702 111 222", gender: "Male", district: "Wakiso", is_verified: true },
+      { id: "U005", name: "Brenda Atuhaire", first_name: "Brenda", last_name: "Atuhaire", email: "brenda.atuhaire@gmail.com", password_hash: passwordHash, role: "applicant", phone: "+256 705 333 444", gender: "Female", district: "Mukono", is_verified: true },
+      { id: "U006", name: "David Ochieng", first_name: "David", last_name: "Ochieng", email: "david.ochieng@gmail.com", password_hash: passwordHash, role: "applicant", phone: "+256 706 555 666", gender: "Male", district: "Jinja", is_verified: true },
+      { id: "U007", name: "Joan Nanteza", first_name: "Joan", last_name: "Nanteza", email: "joan.nanteza@gmail.com", password_hash: passwordHash, role: "applicant", phone: "+256 707 777 888", gender: "Female", district: "Kampala", is_verified: true },
+      { id: "U008", name: "Emmanuel Kato", first_name: "Emmanuel", last_name: "Kato", email: "emmanuel.kato@gmail.com", password_hash: passwordHash, role: "applicant", phone: "+256 708 999 000", gender: "Male", district: "Masaka", is_verified: true },
+    ];
+
+    for (const user of [...demoUsers, ...additionalApplicants]) {
       await client.query(
         `INSERT INTO users (id, name, first_name, last_name, email, password_hash, role, phone, gender, district, is_verified)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -283,9 +291,45 @@ const seedDemoUsers = async () => {
       );
     }
 
-    logger.info("Demo users seeded successfully");
+    // Seed Internships
+    const demoInternships = [
+      { id: "INT001", title: "Software Development Intern", department: "ICT", description: "Develop internal software systems and web portals for KCCA.", vacancies: 4, deadline: "2026-08-15", supervisor: "Mr. Peter Mwesigwa", duration: "3 Months", location: "City Hall – Kampala", status: "open" },
+      { id: "INT002", title: "Public Health Intern", department: "Public Health Services", description: "Community health outreach programs and data collection.", vacancies: 6, deadline: "2026-08-20", supervisor: "Dr. Aisha Namazzi", duration: "6 Months", location: "Kawempe Division", status: "open" },
+      { id: "INT003", title: "Urban Planning Intern", department: "Urban Planning", description: "Support land-use mapping and environmental impact assessments.", vacancies: 3, deadline: "2026-08-30", supervisor: "Eng. Moses Kabugo", duration: "4 Months", location: "City Hall – Kampala", status: "open" },
+      { id: "INT004", title: "Finance & Accounts Intern", department: "Finance & Planning", description: "Assist in financial reporting, budget prep, and audit support.", vacancies: 5, deadline: "2026-09-01", supervisor: "Ms. Grace Akullo", duration: "3 Months", location: "City Hall – Kampala", status: "open" }
+    ];
+
+    for (const item of demoInternships) {
+      await client.query(
+        `INSERT INTO internships (id, title, department, description, vacancies, deadline, supervisor, duration, location, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         ON CONFLICT (id) DO NOTHING`,
+        [item.id, item.title, item.department, item.description, item.vacancies, item.deadline, item.supervisor, item.duration, item.location, item.status]
+      );
+    }
+
+    // Seed Submitted Applications to HR
+    const demoApplications = [
+      { id: "APP001", internship_id: "INT001", applicant_id: "U001", university: "Makerere University", course: "Computer Science", gpa: 4.5, status: "shortlisted", review_note: "Exceptional academic background and strong coding skills.", assigned_hr_id: "U002", submitted_at: "2026-07-10T09:30:00Z" },
+      { id: "APP002", internship_id: "INT004", applicant_id: "U005", university: "Uganda Christian University", course: "Accounting & Finance", gpa: 4.2, status: "under_review", review_note: "Documents verified. Pending HR department manager endorsement.", assigned_hr_id: "U002", submitted_at: "2026-07-15T11:00:00Z" },
+      { id: "APP003", internship_id: "INT002", applicant_id: "U006", university: "MUST", course: "Public Health", gpa: 4.1, status: "shortlisted", review_note: "Strong community outreach background and research experience.", assigned_hr_id: "U002", submitted_at: "2026-07-18T14:20:00Z" },
+      { id: "APP004", internship_id: "INT003", applicant_id: "U008", university: "Makerere University", course: "Urban Planning & Environment", gpa: 3.9, status: "submitted", review_note: "Application received and queued for initial screening.", assigned_hr_id: null, submitted_at: "2026-07-20T08:45:00Z" },
+      { id: "APP005", internship_id: "INT001", applicant_id: "U004", university: "Kyambogo University", course: "Information Technology", gpa: 4.3, status: "interview", review_note: "Invited for technical interview.", assigned_hr_id: "U002", submitted_at: "2026-07-21T10:15:00Z" },
+      { id: "APP006", internship_id: "INT002", applicant_id: "U007", university: "MUBS", course: "Business Administration", gpa: 3.7, status: "accepted", review_note: "Approved for placement in Kawempe Division outreach team.", assigned_hr_id: "U002", submitted_at: "2026-07-22T16:00:00Z" },
+    ];
+
+    for (const app of demoApplications) {
+      await client.query(
+        `INSERT INTO applications (id, internship_id, applicant_id, university, course, gpa, status, review_note, assigned_hr_id, submitted_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         ON CONFLICT (id) DO NOTHING`,
+        [app.id, app.internship_id, app.applicant_id, app.university, app.course, app.gpa, app.status, app.review_note, app.assigned_hr_id, app.submitted_at]
+      );
+    }
+
+    logger.info("Demo users, internships, and HR applications seeded successfully");
   } catch (err) {
-    logger.error("Failed to seed demo users", { error: err.message });
+    logger.error("Failed to seed demo data", { error: err.message });
   } finally {
     client.release();
   }
