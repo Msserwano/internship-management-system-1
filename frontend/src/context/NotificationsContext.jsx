@@ -18,7 +18,26 @@ export function NotificationsProvider({ children }) {
     try {
       const res = await notificationService.getAll({ page: p, limit: 10 });
       const body = res.data || {};
-      const items = body.data || [];
+      const raw = body.data || [];
+      const items = raw.map((n) => {
+        let title = n.type.replace(/_/g, ' ');
+        let message = '';
+        try {
+          const p = typeof n.payload === 'string' ? JSON.parse(n.payload) : n.payload || {};
+          if (n.type === 'application_submitted') {
+            title = 'New application';
+            message = `Application ${p.applicationId || ''} submitted`;
+          } else if (n.type === 'application_assigned') {
+            title = 'Assigned to you';
+            message = `Application ${p.applicationId || ''} assigned to you`;
+          } else {
+            message = p.message || '';
+          }
+          return { ...n, payload: p, title, message };
+        } catch (e) {
+          return { ...n, title, message };
+        }
+      });
       if (p > 1) setNotifications((prev) => [...prev, ...items]);
       else setNotifications(items);
       setPage(body.page || p);

@@ -8,6 +8,7 @@ import Select from "../../components/ui/Select";
 import Badge from "../../components/ui/Badge";
 import Modal from "../../components/ui/Modal";
 import Skeleton from "../../components/ui/Skeleton";
+import Avatar from "../../components/ui/Avatar";
 import useApi from "../../hooks/useApi";
 import { applicationService } from "../../api/services";
 import { useAuth } from "../../context/AuthContext";
