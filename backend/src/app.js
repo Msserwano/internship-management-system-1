@@ -101,15 +101,15 @@ app.get("/api/health", (req, res) => {
 });
 
 // ── API Routes ──────────────────────────────────────────────────────────
-// Auth routes with strict rate limiting
-app.use("/api/auth", authRateLimit, authRoutes);
+// Auth routes
+app.use("/api/auth", authRoutes);
 
-// Protected routes with standard rate limiting
-app.use("/api/internships", apiRateLimit, internshipRoutes);
-app.use("/api/users", apiRateLimit, userRoutes);
-app.use("/api/applications", apiRateLimit, applicationRoutes);
-app.use("/api/interviews", apiRateLimit, interviewRoutes);
-app.use("/api/notifications", apiRateLimit, notificationRoutes);
+// Protected routes
+app.use("/api/internships", internshipRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/applications", applicationRoutes);
+app.use("/api/interviews", interviewRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // ── 404 Handler ─────────────────────────────────────────────────────────
 app.use(notFoundHandler);
