@@ -103,8 +103,8 @@ const registerUser = async (req, res) => {
     }
     return res.status(201).json(responsePayload);
   } catch (err) {
-    client.release();
-    console.error("[AUTH] Register failed:", err.message);
+    if (client) try { client.release(); } catch (e) {}
+    console.error("[AUTH] Register failed:", err.message, err.stack);
     return res.status(500).json({ success: false, message: "Internal server error during registration." });
   }
 };
@@ -129,7 +129,7 @@ const verifyEmail = async (req, res) => {
     client.release();
     return res.status(200).json({ success: true, message: "Email verified successfully! You can now log in to your account.", user: updatedRes.rows[0] });
   } catch (err) {
-    console.error("[AUTH] Verify email failed:", err.message);
+    console.error("[AUTH] Verify email failed:", err.message, err.stack);
     return res.status(500).json({ success: false, message: "Internal server error during email verification." });
   }
 };
@@ -152,7 +152,8 @@ const resendVerification = async (req, res) => {
     if (emailResult.mode === "console" || emailResult.mode === "fallback") { responsePayload.devCode = emailResult.code || newOtp; responsePayload.message = `New code sent! (Dev Mode — your new code is: ${emailResult.code || newOtp})`; }
     return res.status(200).json(responsePayload);
   } catch (err) {
-    console.error("[AUTH] Resend verification failed:", err.message); return res.status(500).json({ success: false, message: "Failed to resend verification code." });
+    console.error("[AUTH] Resend verification failed:", err.message, err.stack);
+    return res.status(500).json({ success: false, message: "Failed to resend verification code." });
   }
 };
 
@@ -172,7 +173,8 @@ const loginUser = async (req, res) => {
     client.release();
     return res.status(200).json({ success: true, message: "Login successful.", token, user: payload });
   } catch (err) {
-    console.error("[AUTH] Login failed:", err.message); return res.status(500).json({ success: false, message: "Internal server error during login." });
+    console.error("[AUTH] Login failed:", err.message, err.stack);
+    return res.status(500).json({ success: false, message: "Internal server error during login." });
   }
 };
 

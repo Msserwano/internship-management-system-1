@@ -4,6 +4,8 @@
  */
 const logger = require("../config/logger");
 
+const isDevelopment = process.env.NODE_ENV === "development";
+
 /**
  * Async error wrapper to catch errors in async route handlers
  */
@@ -29,7 +31,7 @@ const errorHandler = (err, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     message,
-    ...(isDevelopment && { stack: err.stack }),
+    ...(isDevelopment ? { stack: err.stack } : {}),
     timestamp: new Date().toISOString(),
   });
 };
@@ -60,7 +62,7 @@ const validationErrorHandler = (err, req, res, next) => {
   next(err);
 };
 
-const isDevelopment = process.env.NODE_ENV === "development";
+// (isDevelopment already defined above)
 
 module.exports = {
   asyncHandler,
