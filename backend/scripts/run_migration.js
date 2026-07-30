@@ -4,10 +4,9 @@ const path = require('path');
 require('dotenv').config();
 const { Client } = require('pg');
 
-const MIGRATION = path.resolve(__dirname, '..', '..', 'database', 'migrations', '2026-07-30-add-assigned-hr-and-notifications.sql');
+const MIGRATIONS_DIR = path.resolve(__dirname, '..', '..', 'database', 'migrations');
 
 async function run() {
-  const sql = fs.readFileSync(MIGRATION, 'utf8');
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     console.error('DATABASE_URL not set in environment. Aborting.');
@@ -17,11 +16,21 @@ async function run() {
   const client = new Client({ connectionString });
   try {
     await client.connect();
-    console.log('Connected to database. Running migration...');
+    console.log('Connected to database. Scanning migrations...');
+    const files = fs.readdirSync(MIGRATIONS_DIR).filter(f => f.endsWith('.sql')).sort();
+    if (files.length === 0) {
+      console.log('No migration files found.');
+      await client.end();
+      process.exit(0);
+    }
     await client.query('BEGIN');
-    await client.query(sql);
+    for (const file of files) {
+      const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8');
+      console.log('Applying', file);
+      await client.query(sql);
+    }
     await client.query('COMMIT');
-    console.log('Migration applied successfully.');
+    console.log('All migrations applied successfully.');
     await client.end();
     process.exit(0);
   } catch (err) {
