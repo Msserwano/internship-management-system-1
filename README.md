@@ -42,3 +42,25 @@ npm start
 - **Applicant Portal**: Dashboard matching reference design, Internship browser with search & filters, 5-Step Application Wizard, Application Timeline & Offer download, Interview Module, Document Repository, Messaging, Profile editor, Settings, Notifications.
 - **HR Officer Portal**: Dashboard with KPI cards & Chart.js visualizations, Internship posting CRUD, Advanced Application filtering & bulk actions, Interview scheduling with SMS/Email reminders, PDF/Excel/CSV report generation.
 - **System Admin Portal**: Role & Permissions matrix, User management, Audit trail logs, System backup & database restore.
+
+## Deployment
+
+Quick steps to run with Docker Compose (recommended for production-like local testing):
+
+1. Copy `.env.example` to `backend/.env` and fill required values (especially `DATABASE_URL`, `JWT_SECRET`, `EMAIL_USER`, `EMAIL_PASS`).
+
+2. Start services:
+
+```bash
+docker-compose up --build -d
+```
+
+3. Backend will be available on `http://localhost:5000` and frontend on `http://localhost:5173` (or `5175` if port shift occurs).
+
+Running migrations:
+
+Place SQL migration files under `database/migrations/` and use the included `backend/scripts/run_migration.js` script (requires `DATABASE_URL` set) to apply them.
+
+Notes:
+- Ensure `JWT_SECRET` is set to a strong secret in production.
+- For SMTP, prefer a dedicated email service or Gmail App Password with `SMTP_HOST`/`SMTP_PORT` configured.
