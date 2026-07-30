@@ -99,7 +99,7 @@ const submitApplication = async (req, res) => {
       // Notify HR users about the new application (non-blocking)
       (async () => {
         try {
-          const hrRes = await pool.query("SELECT email, name FROM users WHERE LOWER(role) = 'hr' AND (status IS NULL OR LOWER(status) = 'active')");
+          const hrRes = await pool.query("SELECT id, email, name FROM users WHERE LOWER(role) = 'hr' AND (status IS NULL OR LOWER(status) = 'active')");
           if (hrRes.rowCount > 0) {
             const app = appRes.rows[0];
             const internshipTitle = internship.title || 'Internship';
@@ -115,8 +115,19 @@ const submitApplication = async (req, res) => {
               <p><strong>GPA:</strong> ${app.gpa || 'N/A'}</p>
               ${viewLink ? `<p><a href="${viewLink}">View application</a></p>` : ''}
             `;
-            const notify = hrRes.rows.map(h => sendNotificationEmail(h.email, subject, html, `New application for ${internshipTitle}`));
-            const results = await Promise.allSettled(notify);
+            // Insert notification records and send emails (non-blocking)
+            const notifyPromises = hrRes.rows.map(async (h) => {
+              try {
+                await pool.query(
+                  `INSERT INTO notifications (user_id, type, payload, is_read, created_at) VALUES ($1,$2,$3,false,NOW())`,
+                  [h.id || h.user_id || h.email, 'application_submitted', JSON.stringify({ applicationId: app.id, internshipId: internshipId, applicantId: app.applicant_id })]
+                );
+              } catch (e) {
+                console.error('[NOTIFY] Failed to create DB notification for', h.email, e.message || e);
+              }
+              return sendNotificationEmail(h.email, subject, html, `New application for ${internshipTitle}`);
+            });
+            const results = await Promise.allSettled(notifyPromises);
             results.forEach((r, i) => {
               if (r.status === 'fulfilled') console.log(`[NOTIFY] Email sent to ${hrRes.rows[i].email}`);
               else console.error(`[NOTIFY] Failed to send to ${hrRes.rows[i].email}:`, r.reason || r);
@@ -207,10 +218,76 @@ const deleteApplication = async (req, res) => {
   }
 };
 
+/**
+ * Assign an application to a specific HR user (requires HR/Admin)
+ */
+const assignApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { hrId } = req.body;
+    if (!hrId) return res.status(400).json({ success: false, message: 'hrId is required.' });
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const appRes = await client.query('SELECT * FROM applications WHERE id = $1 FOR UPDATE', [id]);
+      const application = appRes.rows[0];
+      if (!application) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ success: false, message: 'Application not found.' });
+      }
+
+      const userRes = await client.query('SELECT id, email, name, role FROM users WHERE id = $1', [hrId]);
+      const hrUser = userRes.rows[0];
+      if (!hrUser || String(hrUser.role).toLowerCase() !== 'hr') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ success: false, message: 'Provided hrId is not a valid HR user.' });
+      }
+
+      // update assigned_hr_id and timeline
+      const timeline = (application.timeline || []).concat([{ status: 'assigned', date: new Date().toISOString(), note: `Assigned to HR ${hrUser.name || hrUser.id}` }]);
+      const q = `UPDATE applications SET assigned_hr_id = $1, timeline = $2, updated_at = NOW() WHERE id = $3 RETURNING *`;
+      const updated = await client.query(q, [hrId, JSON.stringify(timeline), id]);
+
+      // create notification for the HR user
+      await client.query(
+        `INSERT INTO notifications (user_id, type, payload, is_read, created_at) VALUES ($1,$2,$3,false,NOW())`,
+        [hrId, 'application_assigned', JSON.stringify({ applicationId: id, internshipId: application.internship_id, applicantId: application.applicant_id })]
+      );
+
+      await client.query('COMMIT');
+
+      // Send email notification (non-blocking)
+      (async () => {
+        try {
+          const subject = `Application ${id} assigned to you`;
+          const frontendUrl = process.env.FRONTEND_URL || '';
+          const viewLink = frontendUrl ? `${frontendUrl.replace(/\/$/, '')}/admin/applications/${id}` : '';
+          const html = `<p>The application <strong>${id}</strong> has been assigned to you.</p>${viewLink ? `<p><a href="${viewLink}">View application</a></p>` : ''}`;
+          await sendNotificationEmail(hrUser.email, subject, html, `Application ${id} assigned to you`);
+        } catch (err) {
+          console.error('[NOTIFY] Failed to email assigned HR:', err.message || err);
+        }
+      })();
+
+      return res.status(200).json({ success: true, message: 'Application assigned successfully.', data: updated.rows[0] });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('[APPLICATION CONTROLLER] assign failed:', err.message || err);
+    return res.status(500).json({ success: false, message: 'Failed to assign application.' });
+  }
+};
+
 module.exports = {
   getAllApplications,
   getApplicationById,
   submitApplication,
   updateApplication,
   deleteApplication,
+  assignApplication,
 };

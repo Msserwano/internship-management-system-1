@@ -34,6 +34,7 @@ const internshipRoutes = require("./routes/internshipRoutes");
 const userRoutes = require("./routes/userRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 
@@ -103,6 +104,7 @@ app.use("/api/internships", apiRateLimit, internshipRoutes);
 app.use("/api/users", apiRateLimit, userRoutes);
 app.use("/api/applications", apiRateLimit, applicationRoutes);
 app.use("/api/interviews", apiRateLimit, interviewRoutes);
+app.use("/api/notifications", apiRateLimit, notificationRoutes);
 
 // ── 404 Handler ─────────────────────────────────────────────────────────
 app.use(notFoundHandler);

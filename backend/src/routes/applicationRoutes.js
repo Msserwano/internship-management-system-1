@@ -23,6 +23,9 @@ router.get("/:id", requireAuth, getApplicationById);
 // Allow public submissions (everyone can apply). Authenticated users still work.
 router.post("/", submitApplication);
 
+// Assign an application to an HR user
+router.post('/:id/assign', requireAuth, requireRole(['hr','admin']), require('../controllers/applicationController').assignApplication);
+
 // ── EDIT / MODIFY (update status / review note) ───────────────────────────
 // PUT /api/applications/:id  { status, reviewNote, ... }
 router.put("/:id", requireAuth, updateApplication);

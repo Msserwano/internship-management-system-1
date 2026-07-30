@@ -70,6 +70,9 @@ export const applicationService = {
   /** Edit / Modify application { status, reviewNote, ... } */
   update:   (id, data)    => api.put(`/applications/${id}`, data),
 
+  /** Assign an application to an HR user */
+  assign:   (id, data)    => api.post(`/applications/${id}/assign`, data),
+
   /** Delete application */
   remove:   (id)          => api.delete(`/applications/${id}`),
 };
@@ -93,4 +96,10 @@ export const interviewService = {
 
   /** Delete / Cancel interview */
   remove:   (id)          => api.delete(`/interviews/${id}`),
+};
+
+// Notifications
+export const notificationService = {
+  getAll: () => api.get('/notifications'),
+  markRead: (id) => api.put(`/notifications/${id}/read`),
 };

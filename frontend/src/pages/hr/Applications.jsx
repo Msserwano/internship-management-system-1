@@ -10,6 +10,7 @@ import Modal from "../../components/ui/Modal";
 import Skeleton from "../../components/ui/Skeleton";
 import useApi from "../../hooks/useApi";
 import { applicationService } from "../../api/services";
+import { useAuth } from "../../context/AuthContext";
 import { KCCA_DEPARTMENTS } from "../../utils/constants";
 import { fDate } from "../../utils/formatters";
 import toast from "react-hot-toast";
@@ -19,6 +20,7 @@ import {
 
 const HRApplications = () => {
   const { data: apps, loading, refetch } = useApi("/applications");
+  const { user } = useAuth();
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
   const [reviewNote, setReviewNote]   = useState("");
@@ -76,6 +78,17 @@ const HRApplications = () => {
       refetch();
     } catch {
       toast.error("Failed to update application.");
+    }
+  };
+
+  const handleAssignToMe = async (app) => {
+    try {
+      if (!user) return toast.error('Authentication required.');
+      await applicationService.assign(app.id, { hrId: user.id });
+      toast.success('Assigned to you.');
+      refetch();
+    } catch (err) {
+      toast.error('Failed to assign application.');
     }
   };
 
@@ -186,6 +199,7 @@ const HRApplications = () => {
                 <th>University</th>
                 <th>GPA</th>
                 <th>Status</th>
+                <th>Assigned HR</th>
                 <th>Submitted</th>
                 <th>Actions</th>
               </tr>
@@ -209,6 +223,7 @@ const HRApplications = () => {
                   <td>{app.university}</td>
                   <td><span className="font-semibold text-primary-600">{app.gpa}</span></td>
                   <td><Badge status={app.status} /></td>
+                  <td>{app.assigned_hr_id || '—'}</td>
                   <td className="text-xs text-slate-400">{fDate(app.submittedAt)}</td>
                   <td>
                     <Button variant="ghost" size="xs" onClick={() => setSelectedApp(app)} icon={Eye}>
@@ -255,11 +270,14 @@ const HRApplications = () => {
             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
               <Button variant="ghost" size="sm" onClick={() => setSelectedApp(null)}>Close</Button>
               <div className="flex gap-2">
-                <Button variant="danger" size="sm" onClick={() => handleUpdateSingle(selectedApp.id, "rejected")}>
+                <Button variant="danger" size="sm" onClick={() => handleUpdateSingle(selectedApp.id, "rejected")}> 
                   Reject Application
                 </Button>
                 <Button variant="accent" size="sm" onClick={() => handleUpdateSingle(selectedApp.id, "shortlisted")}>
                   Shortlist Candidate
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleAssignToMe(selectedApp)}>
+                  Assign To Me
                 </Button>
               </div>
             </div>
