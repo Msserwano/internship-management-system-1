@@ -197,7 +197,7 @@ const submitApplication = async (req, res) => {
 const updateApplication = async (req, res) => {
   try {
     const { id } = req.params;
-    const client = await pool.connect();
+    const client = await pool().connect();
     try {
       await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
 
@@ -206,9 +206,9 @@ const updateApplication = async (req, res) => {
 
       // Applicants may only withdraw their own application
       if (!isStaff(req.user)) {
-        const isOwner       = existing.applicant_id === req.user.id;
-        const onlyWithdraw  = req.body.status === "withdrawn" && Object.keys(req.body).length === 1;
-        if (!isOwner || !onlyWithdraw) {
+        const isOwner      = String(existing.applicant_id) === String(req.user.id);
+        const isWithdrawal = req.body.status === "withdrawn";
+        if (!isOwner || !isWithdrawal) {
           return res.status(403).json({ success: false, message: "Applicants may only withdraw their own application." });
         }
       }
