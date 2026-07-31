@@ -1,175 +1,81 @@
 const express = require('express');
 const router = express.Router();
 const { list, getById, create, update, remove } = require('../controllers/genericController');
-const db = require('../config/db');
-const { requireAuth, requireRole, requireSelfOrRole } = require('../middleware/authJwt');
-const validate = require('../validators/validate');
-const schemaMap = require('../validators/schemaMap');
+const { getPool } = require('../config/database');
+const { requireAuth, requireRole } = require('../middleware/authJwt');
 
+// GET /api/data/audit-logs — Admin & HR can view audit trail
+router.get('/audit-logs', requireAuth, requireRole(['admin', 'hr']), async (req, res) => {
+  try {
+    const pool = getPool();
+    const { action, resourceType, limit = 50 } = req.query;
+    const clauses = [];
+    const params = [];
+    let idx = 1;
 
-router.get('/audit-logs', requireAuth, requireRole(['admin']), async (req, res) => {
-	try {
-		const { table, id, action, page, limit } = req.query;
-		const result = await db.getAuditLogs({ table, id, action }, { page, limit });
-		return res.json({ success: true, total: result.total, page: result.page, limit: result.limit, count: result.data.length, data: result.data });
-	} catch (err) {
-		return res.status(400).json({ success: false, message: err.message });
-	}
+    if (action) {
+      clauses.push(`UPPER(action) = $${idx}`);
+      params.push(action.toUpperCase());
+      idx++;
+    }
+    if (resourceType) {
+      clauses.push(`UPPER(resource_type) = $${idx}`);
+      params.push(resourceType.toUpperCase());
+      idx++;
+    }
+
+    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    params.push(Number(limit) || 50);
+
+    const result = await pool.query(
+      `SELECT * FROM audit_logs ${where} ORDER BY created_at DESC LIMIT $${idx}`,
+      params
+    );
+
+    return res.json({ success: true, count: result.rowCount, data: result.rows });
+  } catch (err) {
+    console.error('[GENERIC ROUTES] audit-logs error:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve audit logs.' });
+  }
 });
 
+// GET /api/data/audit-logs/export — Export audit logs as CSV
+router.get('/audit-logs/export', requireAuth, requireRole(['admin', 'hr']), async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 1000');
 
-router.get('/audit-logs/export', requireAuth, requireRole(['admin']), async (req, res) => {
-	try {
-		const { table, id, action, format = 'csv', page, limit, stream } = req.query;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="audit-logs.csv"');
 
-		if (format === 'json') {
-			const result = await db.getAuditLogs({ table, id, action }, { page, limit });
-			res.setHeader('Content-Type', 'application/json');
-			return res.send(JSON.stringify(result));
-		}
+    const headers = ['id', 'action', 'resource_type', 'resource_id', 'user_id', 'ip_address', 'created_at'];
+    res.write(headers.join(',') + '\n');
 
-
-		if (format === 'csv') {
-			const pageSize = stream ? Number(limit) || 1000 : (limit ? Number(limit) : null);
-			res.setHeader('Content-Type', 'text/csv');
-			res.setHeader('Content-Disposition', 'attachment; filename="audit-logs.csv"');
-
-			const headers = ['logId','timestamp','action','table','targetId','actorId','actorRole','reason','removed'];
-
-			res.write(headers.join(',') + '\n');
-
-			if (stream) {
-				let currentPage = 1;
-				while (true) {
-					const result = await db.getAuditLogs({ table, id, action }, { page: currentPage, limit: pageSize });
-					for (const l of result.data) {
-						const actorId = l.actor && l.actor.id ? l.actor.id : '';
-						const actorRole = l.actor && l.actor.role ? l.actor.role : '';
-						const removed = l.removed ? JSON.stringify(l.removed) : '';
-						const row = [l.id, l.timestamp, l.action, l.table || '', l.id || '', actorId, actorRole, l.reason || '', removed];
-						res.write(row.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',') + '\n');
-					}
-					if (result.data.length < pageSize) break;
-					currentPage++;
-				}
-				return res.end();
-			}
-
-
-			const result = await db.getAuditLogs({ table, id, action }, { page, limit });
-			for (const l of result.data) {
-				const actorId = l.actor && l.actor.id ? l.actor.id : '';
-				const actorRole = l.actor && l.actor.role ? l.actor.role : '';
-				const removed = l.removed ? JSON.stringify(l.removed) : '';
-				const row = [l.id, l.timestamp, l.action, l.table || '', l.id || '', actorId, actorRole, l.reason || '', removed];
-				res.write(row.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',') + '\n');
-			}
-			return res.end();
-		}
-
-
-		if (format === 'ndjson') {
-			res.setHeader('Content-Type', 'application/x-ndjson');
-
-			const ndPageSize = stream ? Number(limit) || 1000 : (limit ? Number(limit) : null);
-			if (stream) {
-				let currentPage = 1;
-				while (true) {
-					const result = await db.getAuditLogs({ table, id, action }, { page: currentPage, limit: ndPageSize });
-					for (const l of result.data) {
-						res.write(JSON.stringify(l) + '\n');
-					}
-					if (result.data.length < ndPageSize) break;
-					currentPage++;
-				}
-				return res.end();
-			}
-
-			const result = await db.getAuditLogs({ table, id, action }, { page, limit });
-			for (const l of result.data) {
-				res.write(JSON.stringify(l) + '\n');
-			}
-			return res.end();
-		}
-
-		return res.status(400).json({ success: false, message: 'Unsupported format' });
-	} catch (err) {
-		return res.status(400).json({ success: false, message: err.message });
-	}
+    for (const row of result.rows) {
+      const line = [
+        row.id,
+        row.action,
+        row.resource_type,
+        row.resource_id || '',
+        row.user_id || '',
+        row.ip_address || '',
+        row.created_at ? new Date(row.created_at).toISOString() : ''
+      ];
+      res.write(line.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n');
+    }
+    return res.end();
+  } catch (err) {
+    console.error('[GENERIC ROUTES] export error:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to export audit logs.' });
+  }
 });
 
-router.post('/purge/:table', requireAuth, requireRole(['admin']), async (req, res) => {
-	try {
-		const table = req.params.table;
-		const result = await db.purgeDeleted(table);
-		return res.json({ success: true, message: `Purged ${result.removed} items from ${table}`, removed: result.removed });
-	} catch (err) {
-		return res.status(400).json({ success: false, message: err.message });
-	}
-});
-
-
+// Generic CRUD endpoints for allowed tables
 router.get('/:table', list);
 router.get('/:table/:id', getById);
 
-
-router.post('/:table', requireAuth, async (req, res) => {
-	try {
-		const table = req.params.table;
-		const map = schemaMap[table];
-
-		if (map && map.create) {
-			await map.create.parseAsync(req.body);
-		}
-
-		const role = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
-		if (!['hr','admin'].includes(role)) return res.status(403).json({ success: false, message: 'Forbidden' });
-		return create(req, res);
-	} catch (err) {
-		if (err.name === 'ZodError') return res.status(400).json({ success: false, message: 'Validation failed', errors: err.errors });
-		return res.status(400).json({ success: false, message: err.message });
-	}
-});
-
-
-router.put('/:table/:id', requireAuth, async (req, res) => {
-	try {
-		const table = req.params.table;
-		const id = req.params.id;
-		const map = schemaMap[table];
-
-		if (table === 'users') {
-
-			const allowedRoles = ['hr','admin'];
-			const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
-			if (!allowedRoles.includes(userRole) && String(req.user.id) !== String(id)) {
-				return res.status(403).json({ success: false, message: 'Forbidden: insufficient permissions' });
-			}
-		} else {
-			const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
-			if (!['hr','admin'].includes(userRole)) return res.status(403).json({ success: false, message: 'Forbidden' });
-		}
-
-
-		if (map && map.update) {
-			await map.update.parseAsync(req.body);
-		}
-
-		return update(req, res);
-	} catch (err) {
-		if (err.name === 'ZodError') return res.status(400).json({ success: false, message: 'Validation failed', errors: err.errors });
-		return res.status(400).json({ success: false, message: err.message });
-	}
-});
-
-
-router.delete('/:table/:id', requireAuth, (req, res) => {
-	const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
-	const table = req.params.table;
-
-	if (userRole === 'admin') return remove(req, res);
-	if (userRole === 'hr' && ['internships', 'applications'].includes(table)) return remove(req, res);
-	return res.status(403).json({ success: false, message: 'Forbidden' });
-});
+router.post('/:table', requireAuth, requireRole(['admin', 'hr']), create);
+router.put('/:table/:id', requireAuth, requireRole(['admin', 'hr']), update);
+router.delete('/:table/:id', requireAuth, requireRole(['admin', 'hr']), remove);
 
 module.exports = router;
