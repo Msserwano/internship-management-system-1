@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 
 const INITIAL_DOCS = [
-  { id: "D1", name: "National ID Card", type: "National ID", filename: "national_id_sarah.pdf", size: "1.2 MB", status: "verified", date: "2026-07-01" },
   { id: "D2", name: "University Recommendation Letter", type: "Recommendation Letter", filename: "makerere_recommendation.pdf", size: "850 KB", status: "verified", date: "2026-07-02" },
   { id: "D3", name: "Academic Transcript", type: "Transcript", filename: "transcript_year3.pdf", size: "2.4 MB", status: "verified", date: "2026-07-05" },
   { id: "D4", name: "Curriculum Vitae (CV)", type: "CV", filename: "sarah_nakimuli_cv.pdf", size: "420 KB", status: "verified", date: "2026-07-05" },
@@ -67,9 +66,9 @@ const Documents = () => {
         <h3 className="font-bold text-sm text-slate-800 dark:text-white mb-3">
           Required Document Verification Status
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {[
-            "National ID", "Recommendation Letter", "Transcript", "CV", "Cover Letter", "Passport Photo"
+            "Recommendation Letter", "Transcript", "CV", "Cover Letter", "Passport Photo"
           ].map((reqType) => {
             const uploaded = docs.find(d => d.type === reqType || d.name.includes(reqType));
             return (

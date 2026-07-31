@@ -42,7 +42,6 @@ const ApplyWizard = () => {
     gender: user?.gender || "Female",
     dob: user?.dob || "",
     district: user?.district || "",
-    nin: "",
 
     qualification: "Bachelor's Degree",
     course: user?.course || "",
@@ -54,7 +53,6 @@ const ApplyWizard = () => {
     headOfDept: "",
     universityEmail: "",
 
-    nationalIdDoc: "",
     recommendationDoc: "",
     transcriptDoc: "",
     cvDoc: "",
@@ -318,13 +316,6 @@ const ApplyWizard = () => {
                   value={formData.district}
                   onChange={(e) => handleChange("district", e.target.value)}
                 />
-                <Input
-                  label="National ID Number (NIN)"
-                  required
-                  value={formData.nin}
-                  onChange={(e) => handleChange("nin", e.target.value)}
-                  placeholder="CM..."
-                />
               </div>
             </motion.div>
           )}
@@ -429,7 +420,6 @@ const ApplyWizard = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { field: "nationalIdDoc", label: "National ID / Passport", desc: "PDF, PNG or JPG copy" },
                   { field: "recommendationDoc", label: "University Recommendation Letter", desc: "Signed letter from Dean/HOD" },
                   { field: "transcriptDoc", label: "Academic Transcript", desc: "Official academic transcript" },
                   { field: "cvDoc", label: "Curriculum Vitae (CV)", desc: "Updated detailed CV" },
