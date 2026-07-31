@@ -14,6 +14,6 @@ router.get("/",       getAllInternships);
 router.get("/:id",    getInternshipById);
 router.post("/",      requireAuth, requireRole(["hr","admin"]), createInternship);
 router.put("/:id",    requireAuth, requireRole(["hr","admin"]), updateInternship);
-router.delete("/:id", requireAuth, requireRole(["admin"]), deleteInternship);
+router.delete("/:id", requireAuth, requireRole(["hr", "admin"]), deleteInternship);
 
 module.exports = router;

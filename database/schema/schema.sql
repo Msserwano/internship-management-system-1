@@ -206,8 +206,10 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     id            BIGSERIAL    PRIMARY KEY,
     action        VARCHAR(50)  NOT NULL,
     resource_type VARCHAR(100) NOT NULL,
-    resource_id   VARCHAR(255) NOT NULL,
+    resource_id   VARCHAR(255),
     user_id       VARCHAR(255),
+    ip_address    VARCHAR(100),
+    user_agent    TEXT,
     old_value     JSONB,
     new_value     JSONB,
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT now()
