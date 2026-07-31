@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { notificationService } from "../api/services";
 import { useAuth } from "./AuthContext";
 
@@ -8,87 +8,100 @@ const NotificationsContext = createContext(null);
 export function NotificationsProvider({ children }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading]   = useState(false);
+  const [page, setPage]         = useState(1);
+  const [hasMore, setHasMore]   = useState(true);
 
-  const fetchNotifications = async (p = 1) => {
-    if (!user) return setNotifications([]);
+  // Normalise a raw notification row into a consistent shape
+  const normalise = (n) => {
+    let title   = (n.type || "").replace(/_/g, " ");
+    let message = "";
+    let payload = n.payload;
+
+    try {
+      if (typeof payload === "string") payload = JSON.parse(payload);
+      payload = payload || {};
+
+      if (n.type === "application_submitted") {
+        title   = "New application received";
+        message = `Application ${payload.applicationId || ""} has been submitted.`;
+      } else if (n.type === "application_assigned") {
+        title   = "Application assigned to you";
+        message = `Application ${payload.applicationId || ""} has been assigned to you.`;
+      } else {
+        message = payload.message || "";
+      }
+    } catch {
+      payload = {};
+    }
+
+    return { ...n, payload, title, message };
+  };
+
+  // Stable fetch function wrapped in useCallback to prevent stale closures in setInterval
+  const fetchNotifications = useCallback(async (p = 1) => {
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
     setLoading(true);
     try {
-      const res = await notificationService.getAll({ page: p, limit: 10 });
+      const res  = await notificationService.getAll({ page: p, limit: 20 });
       const body = res.data || {};
-      const raw = body.data || [];
-      const items = raw.map((n) => {
-        let title = n.type.replace(/_/g, ' ');
-        let message = '';
-        try {
-          const p = typeof n.payload === 'string' ? JSON.parse(n.payload) : n.payload || {};
-          if (n.type === 'application_submitted') {
-            title = 'New application';
-            message = `Application ${p.applicationId || ''} submitted`;
-          } else if (n.type === 'application_assigned') {
-            title = 'Assigned to you';
-            message = `Application ${p.applicationId || ''} assigned to you`;
-          } else {
-            message = p.message || '';
-          }
-          return { ...n, payload: p, title, message };
-        } catch (e) {
-          return { ...n, title, message };
-        }
-      });
-      if (p > 1) setNotifications((prev) => [...prev, ...items]);
-      else setNotifications(items);
+      const raw  = body.data || [];
+      const items = raw.map(normalise);
+
+      if (p > 1) {
+        setNotifications((prev) => [...prev, ...items]);
+      } else {
+        setNotifications(items);
+      }
       setPage(body.page || p);
-      setHasMore((body.count || 0) > ((body.page || p) * (body.limit || 10)));
+      setHasMore((body.count || 0) > (body.page || p) * (body.limit || 20));
     } catch (err) {
-      console.error('[NOTIFICATIONS] fetch failed', err);
+      console.error("[NOTIFICATIONS] fetch failed:", err.message || err);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-    const iv = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(iv);
-
   }, [user]);
 
-  const unread = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
+  // Fetch on mount and when user changes; poll every 30 s for new notifications
+  useEffect(() => {
+    fetchNotifications(1);
+    const interval = setInterval(() => fetchNotifications(1), 30_000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
-  const markRead = async (id) => {
+  // Derived unread count — based on the correct field name from the API
+  const unread = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
+
+  const markRead = useCallback(async (id) => {
     try {
       await notificationService.markRead(id);
-      setNotifications((prev) => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
     } catch (err) {
-      console.error('[NOTIFICATIONS] markRead failed', err);
+      console.error("[NOTIFICATIONS] markRead failed:", err.message || err);
     }
-  };
+  }, []);
 
-  const markAllRead = async () => {
+  const markAllRead = useCallback(async () => {
     try {
-      if (notificationService.markAllRead) {
-        await notificationService.markAllRead();
-      } else {
-        const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
-        await Promise.all(unreadIds.map(id => notificationService.markRead(id)));
-      }
-      setNotifications((prev) => prev.map(n => ({ ...n, isRead: true })));
+      await notificationService.markAllRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch (err) {
-      console.error('[NOTIFICATIONS] markAllRead failed', err);
+      console.error("[NOTIFICATIONS] markAllRead failed:", err.message || err);
     }
-  };
+  }, []);
 
-  const loadMore = async () => {
-    if (!hasMore) return;
-    const next = page + 1;
-    await fetchNotifications(next);
-  };
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loading) return;
+    await fetchNotifications(page + 1);
+  }, [hasMore, loading, page, fetchNotifications]);
 
   return (
-    <NotificationsContext.Provider value={{ notifications, loading, fetchNotifications, unread, markRead, markAllRead, loadMore, hasMore }}>
+    <NotificationsContext.Provider
+      value={{ notifications, loading, fetchNotifications, unread, markRead, markAllRead, loadMore, hasMore }}
+    >
       {children}
     </NotificationsContext.Provider>
   );
@@ -96,6 +109,6 @@ export function NotificationsProvider({ children }) {
 
 export const useNotifications = () => {
   const ctx = useContext(NotificationsContext);
-  if (!ctx) throw new Error('useNotifications must be used inside NotificationsProvider');
+  if (!ctx) throw new Error("useNotifications must be used inside NotificationsProvider");
   return ctx;
 };

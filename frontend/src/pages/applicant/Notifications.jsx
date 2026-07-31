@@ -11,8 +11,8 @@ const Notifications = () => {
   const { notifications, unread, markRead, markAllRead } = useNotifications();
   const [filter, setFilter] = useState("all");
 
-  const filteredNotifs = notifications.filter(n => {
-    if (filter === "unread") return !n.read;
+  const filteredNotifs = notifications.filter((n) => {
+    if (filter === "unread") return !n.isRead;
     return true;
   });
 
