@@ -2,9 +2,10 @@
 const { getPool } = require("../config/database");
 const { sendNotificationEmail } = require("../config/mailer");
 
-const pool = getPool();
-
 const isStaff = (user) => ["hr", "admin"].includes(String(user?.role).toLowerCase());
+
+// Lazy getter — prevents crash on import when DB is not yet ready
+const pool = () => getPool();
 
 // Shared SELECT that joins internship title, applicant name, and assigned HR name
 const applicationSelect = `
@@ -54,7 +55,7 @@ const getAllApplications = async (req, res) => {
     }
 
     const where  = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-    const result = await pool.query(`${applicationSelect} ${where} ORDER BY a.submitted_at DESC`, params);
+    const result = await pool().query(`${applicationSelect} ${where} ORDER BY a.submitted_at DESC`, params);
     return res.status(200).json({ success: true, count: result.rowCount, data: result.rows });
   } catch (err) {
     console.error("[APPLICATION] getAll failed:", err.message);
@@ -71,7 +72,7 @@ const getApplicationById = async (req, res) => {
     const query  = isStaff(req.user)
       ? `${applicationSelect} WHERE a.id = $1`
       : `${applicationSelect} WHERE a.id = $1 AND a.applicant_id = $2`;
-    const result = await pool.query(query, isStaff(req.user) ? [id] : [id, req.user.id]);
+    const result = await pool().query(query, isStaff(req.user) ? [id] : [id, req.user.id]);
     const item   = result.rows[0];
     if (!item) return res.status(404).json({ success: false, message: "Application not found." });
     return res.status(200).json({ success: true, data: item });
@@ -95,7 +96,7 @@ const submitApplication = async (req, res) => {
     // At this point req.user is guaranteed by requireAuth middleware
     const applicantId = req.user.id;
 
-    const client = await pool.connect();
+    const client = await pool().connect();
     try {
       // Ensure timeline column exists (safe in all environments)
       await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
@@ -139,7 +140,7 @@ const submitApplication = async (req, res) => {
       // Notify HR staff asynchronously (fire-and-forget — don't block the response)
       (async () => {
         try {
-          const hrRes = await pool.query("SELECT id, email, name FROM users WHERE LOWER(role)='hr' AND (status IS NULL OR LOWER(status)='active')");
+          const hrRes = await pool().query("SELECT id, email, name FROM users WHERE LOWER(role)='hr' AND (status IS NULL OR LOWER(status)='active')");
           if (hrRes.rowCount > 0) {
             const app = appRes.rows[0];
             const subject = `New application submitted for ${internship.title}`;
@@ -157,7 +158,7 @@ const submitApplication = async (req, res) => {
 
             for (const hr of hrRes.rows) {
               try {
-                await pool.query(
+                await pool().query(
                   `INSERT INTO notifications (user_id, type, payload, is_read, created_at) VALUES ($1,$2,$3,false,NOW())`,
                   [hr.id, "application_submitted", JSON.stringify({ applicationId: app.id, internshipId, applicantId })]
                 );
@@ -261,7 +262,7 @@ const updateApplication = async (req, res) => {
 const deleteApplication = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("DELETE FROM applications WHERE id = $1 RETURNING id", [id]);
+    const result = await pool().query("DELETE FROM applications WHERE id = $1 RETURNING id", [id]);
     if (result.rowCount === 0) {
       return res.status(404).json({ success: false, message: "Application not found or already deleted." });
     }
@@ -308,10 +309,14 @@ const assignApplication = async (req, res) => {
         [hrId, JSON.stringify(timeline), id]
       );
 
-      await client.query(
-        `INSERT INTO notifications (user_id, type, payload, is_read, created_at) VALUES ($1,$2,$3,false,NOW())`,
-        [hrId, "application_assigned", JSON.stringify({ applicationId: id, internshipId: application.internship_id, applicantId: application.applicant_id })]
-      );
+      try {
+        await client.query(
+          `INSERT INTO notifications (user_id, type, payload, is_read, created_at) VALUES ($1,$2,$3,false,NOW())`,
+          [hrId, "application_assigned", JSON.stringify({ applicationId: id, internshipId: application.internship_id, applicantId: application.applicant_id })]
+        );
+      } catch (notifErr) {
+        console.warn("[APPLICATION] notification insert warning:", notifErr.message);
+      }
 
       await client.query("COMMIT");
 

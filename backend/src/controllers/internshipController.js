@@ -1,13 +1,12 @@
 
 const { getPool } = require("../config/database");
 
-const pool = getPool();
-
 // ---------------------------------------------------------------------------
 // GET /api/internships
 // ---------------------------------------------------------------------------
 const getAllInternships = async (req, res) => {
   try {
+    const pool = getPool();
     const { department, search, status } = req.query;
     const clauses = [];
     const params  = [];
@@ -43,6 +42,7 @@ const getAllInternships = async (req, res) => {
 // ---------------------------------------------------------------------------
 const getInternshipById = async (req, res) => {
   try {
+    const pool = getPool();
     const result = await pool.query("SELECT * FROM internships WHERE id = $1", [req.params.id]);
     const item   = result.rows[0];
     if (!item) return res.status(404).json({ success: false, message: "Internship not found." });
@@ -58,6 +58,7 @@ const getInternshipById = async (req, res) => {
 // ---------------------------------------------------------------------------
 const createInternship = async (req, res) => {
   try {
+    const pool = getPool();
     const { title, department, description, vacancies, deadline, supervisor, duration, location } = req.body;
     if (!title || !department || !description || !deadline) {
       return res.status(400).json({ success: false, message: "Title, department, description, and deadline are required." });
@@ -98,6 +99,7 @@ const createInternship = async (req, res) => {
 // ---------------------------------------------------------------------------
 const updateInternship = async (req, res) => {
   try {
+    const pool = getPool();
     const { id } = req.params;
     const check  = await pool.query("SELECT id FROM internships WHERE id = $1", [id]);
     if (check.rowCount === 0) return res.status(404).json({ success: false, message: "Internship not found." });
@@ -133,6 +135,7 @@ const updateInternship = async (req, res) => {
 // ---------------------------------------------------------------------------
 const deleteInternship = async (req, res) => {
   try {
+    const pool = getPool();
     const { id } = req.params;
 
     const result = await pool.query("DELETE FROM internships WHERE id = $1 RETURNING id", [id]);

@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 
-const ALLOWED_TABLES = ['users', 'internships', 'applications', 'interviews', 'notifications'];
+const ALLOWED_TABLES = ['users', 'internships', 'applications', 'interviews', 'notifications', 'departments'];
 
 const ensureTable = (table) => {
   if (!ALLOWED_TABLES.includes(table)) throw new Error(`Table '${table}' is not allowed.`);

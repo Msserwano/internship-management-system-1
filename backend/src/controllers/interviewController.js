@@ -1,11 +1,11 @@
 
 const { getPool } = require("../config/database");
-const pool = getPool();
 const isStaff = (user) => ["hr", "admin"].includes(String(user?.role).toLowerCase());
 
 
 const getAllInterviews = async (req, res) => {
   try {
+    const pool = getPool();
     const { applicationId, status } = req.query;
     const clauses = [];
     const params = [];
@@ -26,6 +26,7 @@ const getAllInterviews = async (req, res) => {
 
 const getInterviewById = async (req, res) => {
   try {
+    const pool = getPool();
     const { id } = req.params;
     const query = isStaff(req.user)
       ? 'SELECT * FROM interviews WHERE id = $1'
@@ -43,6 +44,7 @@ const getInterviewById = async (req, res) => {
 
 const scheduleInterview = async (req, res) => {
   try {
+    const pool = getPool();
     const { applicationId, applicantName, internshipTitle, department, date, time, venue, meetingLink, instructions } = req.body;
     if (!applicationId || !date || !time || !venue) return res.status(400).json({ success: false, message: 'Application, date, time, and venue are required.' });
     const client = await pool.connect();
@@ -71,6 +73,7 @@ const scheduleInterview = async (req, res) => {
 
 const updateInterview = async (req, res) => {
   try {
+    const pool = getPool();
     const { id } = req.params;
     const check = await pool.query('SELECT i.id, a.applicant_id FROM interviews i JOIN applications a ON a.id = i.application_id WHERE i.id = $1', [id]);
     if (check.rowCount === 0) return res.status(404).json({ success: false, message: 'Interview not found.' });
@@ -102,6 +105,7 @@ const updateInterview = async (req, res) => {
 
 const deleteInterview = async (req, res) => {
   try {
+    const pool = getPool();
     const { id } = req.params;
     const result = await pool.query('DELETE FROM interviews WHERE id = $1 RETURNING id', [id]);
     if (result.rowCount === 0) return res.status(404).json({ success: false, message: 'Interview record not found or already deleted.' });

@@ -1,8 +1,8 @@
 const { getPool } = require('../config/database');
-const pool = getPool();
 
 const getNotifications = async (req, res) => {
   try {
+    const pool = getPool();
     const userId = req.user && req.user.id;
     if (!userId) return res.status(401).json({ success: false, message: 'Authentication required.' });
     const page = Math.max(parseInt(req.query.page || '1', 10), 1);
@@ -24,6 +24,7 @@ const getNotifications = async (req, res) => {
 
 const markAsRead = async (req, res) => {
   try {
+    const pool = getPool();
     const userId = req.user && req.user.id;
     const { id } = req.params;
     if (!userId) return res.status(401).json({ success: false, message: 'Authentication required.' });
@@ -38,6 +39,7 @@ const markAsRead = async (req, res) => {
 
 const markAllRead = async (req, res) => {
   try {
+    const pool = getPool();
     const userId = req.user && req.user.id;
     if (!userId) return res.status(401).json({ success: false, message: 'Authentication required.' });
     const result = await pool.query('UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE RETURNING id', [userId]);

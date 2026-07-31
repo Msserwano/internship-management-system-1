@@ -66,23 +66,43 @@ const loginUser = async (req, res) => {
   const client = await getPool().connect();
 
   try {
-    // 1. Check staff_users table
-    let staffRes = await client.query("SELECT * FROM staff_users WHERE LOWER(email) = $1", [normalizedEmail]);
-    let user = staffRes.rows[0];
-    let isStaff = true;
+    let user = null;
+    let userType = null; // "staff_user" | "staff_legacy" | "applicant"
 
-    // 2. If not found in staff_users, check applicants table
+    // 1. Check operational `users` table (seeded staff: admin, hr, supervisor)
+    const usersRes = await client.query("SELECT * FROM users WHERE LOWER(email) = $1", [normalizedEmail]);
+    if (usersRes.rows[0]) {
+      user = usersRes.rows[0];
+      userType = "staff_user";
+    }
+
+    // 2. Fall back to legacy staff_users table
     if (!user) {
-      let applicantRes = await client.query("SELECT * FROM applicants WHERE LOWER(email) = $1", [normalizedEmail]);
-      user = applicantRes.rows[0];
-      isStaff = false;
+      const staffRes = await client.query("SELECT * FROM staff_users WHERE LOWER(email) = $1", [normalizedEmail]);
+      if (staffRes.rows[0]) {
+        user = staffRes.rows[0];
+        userType = "staff_legacy";
+      }
+    }
+
+    // 3. Fall back to applicants table
+    if (!user) {
+      const applicantRes = await client.query("SELECT * FROM applicants WHERE LOWER(email) = $1", [normalizedEmail]);
+      if (applicantRes.rows[0]) {
+        user = applicantRes.rows[0];
+        userType = "applicant";
+      }
     }
 
     if (!user) {
       return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
 
-    if (isStaff && user.is_active === false) {
+    // Deactivation check for staff
+    if (userType === "staff_user" && user.status === "inactive") {
+      return res.status(403).json({ success: false, message: "Your account is deactivated. Contact administrator." });
+    }
+    if (userType === "staff_legacy" && user.is_active === false) {
       return res.status(403).json({ success: false, message: "Your account is deactivated. Contact administrator." });
     }
 
@@ -94,22 +114,35 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
 
-    // Role mapping for staff vs applicants
-    const userRole = isStaff ? (user.role || "admin") : "applicant";
-    // Normalize role for frontend routing (e.g. director_hr / hr_officer -> hr)
+    // Build frontend role
     let frontendRole = "applicant";
-    if (["admin"].includes(userRole)) frontendRole = "admin";
-    else if (["director_hr", "manager_recruitment", "hr_officer", "pca_officer"].includes(userRole)) frontendRole = "hr";
-    else if (userRole === "department_supervisor") frontendRole = "hr";
+    let rawRole = "applicant";
 
-    const userId = isStaff ? user.user_id : user.applicant_id;
+    if (userType === "staff_user") {
+      rawRole = user.role || "hr";
+      if (rawRole === "admin") frontendRole = "admin";
+      else frontendRole = "hr"; // hr, supervisor → all go to hr panel
+    } else if (userType === "staff_legacy") {
+      rawRole = user.role || "hr_officer";
+      if (rawRole === "admin") frontendRole = "admin";
+      else if (["director_hr", "manager_recruitment", "hr_officer", "pca_officer", "department_supervisor"].includes(rawRole)) frontendRole = "hr";
+    }
+
+    // Resolve user id and name across table shapes
+    const userId = userType === "staff_user"
+      ? user.id
+      : userType === "staff_legacy"
+        ? user.user_id
+        : user.applicant_id;
+
+    const userName = user.name || user.full_name || `${user.first_name || ""} ${user.last_name || ""}`.trim();
 
     const payload = {
       id: userId,
-      name: user.full_name,
+      name: userName,
       email: user.email,
       role: frontendRole,
-      rawRole: userRole,
+      rawRole,
     };
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
