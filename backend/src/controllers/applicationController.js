@@ -106,9 +106,23 @@ const submitApplication = async (req, res) => {
       const internshipRes = await client.query("SELECT * FROM internships WHERE id = $1 FOR UPDATE", [internshipId]);
       const internship    = internshipRes.rows[0];
 
-      if (!internship || internship.status !== "open" || new Date(internship.deadline) < new Date()) {
+      if (!internship) {
         await client.query("ROLLBACK");
-        return res.status(400).json({ success: false, message: "This internship is not accepting applications." });
+        return res.status(404).json({ success: false, message: "Selected internship vacancy was not found." });
+      }
+
+      if (internship.status !== "open") {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ success: false, message: "This internship posting is currently closed to new applications." });
+      }
+
+      if (internship.deadline) {
+        const deadlineDate = new Date(internship.deadline);
+        deadlineDate.setHours(23, 59, 59, 999);
+        if (deadlineDate < new Date()) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({ success: false, message: "The application deadline for this internship has passed." });
+        }
       }
 
       // Prevent duplicate application by the same user for the same internship

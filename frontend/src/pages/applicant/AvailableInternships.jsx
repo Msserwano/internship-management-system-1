@@ -155,7 +155,9 @@ const AvailableInternships = () => {
               </div>
 
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">Posted: {fDate(job.posted)}</span>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Posted: {fDate(job.posted_at || job.postedAt || job.created_at || job.posted)}
+                </span>
                 <Link
                   to={`/applicant/apply/${job.id}`}
                   onClick={(e) => e.stopPropagation()}
@@ -176,7 +178,7 @@ const AvailableInternships = () => {
         />
       )}
 
-      {}
+      {/* Detail Modal */}
       {selectedJob && (
         <Modal
           open={!!selectedJob}
@@ -190,7 +192,11 @@ const AvailableInternships = () => {
               <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">{selectedJob.department}</span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl">
+              <div>
+                <p className="text-[11px] text-slate-400">Date Posted</p>
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{fDate(selectedJob.posted_at || selectedJob.postedAt || selectedJob.created_at)}</p>
+              </div>
               <div>
                 <p className="text-[11px] text-slate-400">Duration</p>
                 <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{selectedJob.duration}</p>

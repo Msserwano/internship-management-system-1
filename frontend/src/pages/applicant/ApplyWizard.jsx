@@ -27,18 +27,13 @@ const ApplyWizard = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: internships } = useApi("/internships");
-  const internship = internships.find((i) => String(i.id) === String(id)) || {
-    id: id || "INT001",
-    title: "Software Development Intern",
-    department: "ICT",
-    duration: "3 Months",
-    location: "City Hall – Kampala",
-  };
+  const { data: internships, loading: loadingJobs } = useApi("/internships");
+  
+  const targetId = id || (internships.length > 0 ? internships[0].id : null);
+  const internship = internships.find((i) => String(i.id) === String(targetId));
 
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
-
 
   const [formData, setFormData] = useState({
     fullName: user?.name || "",
@@ -116,22 +111,55 @@ const ApplyWizard = () => {
   };
 
   const handleSubmit = async () => {
+    if (!internship) {
+      toast.error("Invalid internship selected.");
+      return;
+    }
     setSubmitting(true);
     try {
       await applicationService.submit({
         internshipId:   internship.id,
-        university:     formData.university,
-        course:         formData.course,
-        gpa:            formData.gpa,
+        university:     formData.university || "Makerere University",
+        course:         formData.course || "General Studies",
+        gpa:            formData.gpa || "3.5",
       });
       toast.success("Application submitted successfully to KCCA!");
       navigate("/applicant/applications");
-    } catch {
-      toast.error("Failed to submit application. Please try again.");
+    } catch (err) {
+      const errMsg = err.response?.data?.message || "Failed to submit application. Please try again.";
+      toast.error(errMsg);
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loadingJobs) {
+    return (
+      <div className="page-container max-w-4xl mx-auto">
+        <Breadcrumbs />
+        <div className="space-y-4">
+          <div className="h-32 bg-slate-200 dark:bg-slate-700 animate-pulse rounded-2xl" />
+          <div className="h-96 bg-slate-200 dark:bg-slate-700 animate-pulse rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!internship) {
+    return (
+      <div className="page-container max-w-xl mx-auto text-center py-16">
+        <Breadcrumbs />
+        <div className="card p-8 space-y-4">
+          <FileText className="w-12 h-12 text-slate-400 mx-auto" />
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Internship Position Not Found</h2>
+          <p className="text-sm text-slate-500">The selected internship posting may have expired or been removed.</p>
+          <Link to="/applicant/internships">
+            <Button variant="primary" size="md">Browse Available Internships</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container max-w-4xl mx-auto">

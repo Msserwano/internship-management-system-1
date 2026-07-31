@@ -1,19 +1,17 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Mail, Lock, Briefcase, ArrowRight, CheckCircle, AlertTriangle, MailCheck } from "lucide-react";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock, Briefcase, ArrowRight, CheckCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
-import { DEMO_CREDENTIALS } from "../../utils/constants";
 
 const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -29,8 +27,6 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
-
-  const fillDemo = (cred) => { setValue("email", cred.email); setValue("password", cred.password); };
 
   return (
     <div className="min-h-screen flex">
@@ -95,24 +91,6 @@ const LoginPage = () => {
               Don't have an account?{" "}
               <Link to="/register" className="text-primary-500 font-semibold hover:underline">Create Account</Link>
             </p>
-
-            {}
-            <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wide">Demo Accounts</p>
-              <div className="space-y-2">
-                {DEMO_CREDENTIALS.map(cred => (
-                  <button key={cred.role} onClick={() => fillDemo(cred)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition text-left"
-                  >
-                    <CheckCircle className="w-4 h-4 text-primary-400 flex-shrink-0"/>
-                    <div>
-                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{cred.label}</p>
-                      <p className="text-[10px] text-slate-400">{cred.email}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </motion.div>
         </div>
       </div>
