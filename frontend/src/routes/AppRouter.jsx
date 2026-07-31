@@ -18,7 +18,6 @@ import MyApplications       from "../pages/applicant/MyApplications";
 import ApplyWizard          from "../pages/applicant/ApplyWizard";
 import InterviewSchedule    from "../pages/applicant/InterviewSchedule";
 import Documents            from "../pages/applicant/Documents";
-import Messages             from "../pages/applicant/Messages";
 import ApplicantProfile     from "../pages/applicant/Profile";
 import ApplicantSettings    from "../pages/applicant/Settings";
 import ApplicantNotifications from "../pages/applicant/Notifications";
@@ -109,7 +108,6 @@ const AppRouter = () => (
         <Route path="apply/:id"     element={<ApplyWizard />} />
         <Route path="interviews"    element={<InterviewSchedule />} />
         <Route path="documents"     element={<Documents />} />
-        <Route path="messages"      element={<Messages />} />
         <Route path="profile"       element={<ApplicantProfile />} />
         <Route path="settings"      element={<ApplicantSettings />} />
         <Route path="notifications" element={<ApplicantNotifications />} />

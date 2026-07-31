@@ -3,16 +3,14 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { useNotifications } from "../../context/NotificationsContext";
 import Avatar from "../ui/Avatar";
 import {
   LayoutDashboard, Briefcase, FileText, Calendar, FolderOpen,
-  MessageSquare, User, Settings, LogOut, ChevronLeft, ChevronRight,
+  User, Settings, LogOut, ChevronLeft, ChevronRight,
   Building2, Users, BarChart3, ClipboardList, Shield, ScrollText,
   Database, Bell, Sun, Moon, X,
 } from "lucide-react";
 import { cn } from "../../utils/cn";
-import { useState } from "react";
 
 const APPLICANT_NAV = [
   { label: "Dashboard",            icon: LayoutDashboard, to: "/applicant/dashboard" },
@@ -20,7 +18,6 @@ const APPLICANT_NAV = [
   { label: "My Applications",      icon: FileText,        to: "/applicant/applications" },
   { label: "Interview Schedule",   icon: Calendar,        to: "/applicant/interviews" },
   { label: "Documents",            icon: FolderOpen,      to: "/applicant/documents" },
-  { label: "Messages",             icon: MessageSquare,   to: "/applicant/messages" },
   { label: "Profile",              icon: User,            to: "/applicant/profile" },
   { label: "Settings",             icon: Settings,        to: "/applicant/settings" },
 ];
@@ -52,7 +49,6 @@ const NAV_MAP = { applicant: APPLICANT_NAV, hr: HR_NAV, admin: ADMIN_NAV };
 const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
   const { user, logout } = useAuth();
   const { dark, toggle } = useTheme();
-  const { unread } = useNotifications();
   const navigate = useNavigate();
   const nav = NAV_MAP[user?.role] || APPLICANT_NAV;
 
@@ -60,7 +56,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {}
+      {/* Brand Header */}
       <div className={cn("flex items-center gap-3 px-4 py-4 border-b border-white/10", collapsed && !mobileOpen && "justify-center px-2")}>
         <img src="/kcca-logo.png" alt="KCCA Logo" className="w-9 h-9 object-contain bg-white rounded-xl p-0.5 shadow-sm flex-shrink-0" />
         {(!collapsed || mobileOpen) && (
@@ -76,7 +72,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
         )}
       </div>
 
-      {}
+      {/* User Badge */}
       {(!collapsed || mobileOpen) && (
         <div className="px-4 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -89,7 +85,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
         </div>
       )}
 
-      {}
+      {/* Nav Links */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {nav.map((item) => (
           <NavLink
@@ -106,16 +102,11 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
             {(!collapsed || mobileOpen) && (
               <span className="flex-1 truncate">{item.label}</span>
             )}
-            {item.label === "Messages" && unread > 0 && (!collapsed || mobileOpen) && (
-              <span className="ml-auto bg-secondary-500 text-slate-900 text-xs font-bold px-1.5 py-0.5 rounded-full">
-                {unread}
-              </span>
-            )}
           </NavLink>
         ))}
       </nav>
 
-      {}
+      {/* Footer Controls */}
       <div className={cn("px-3 py-4 border-t border-white/10 space-y-1", collapsed && !mobileOpen && "px-2")}>
         <button
           onClick={toggle}
@@ -137,14 +128,13 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
 
   return (
     <>
-      {}
+      {/* Desktop Sidebar */}
       <motion.aside
         animate={{ width: collapsed ? 72 : 260 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="hidden md:flex flex-col h-screen bg-gradient-to-b from-primary-700 to-primary-900 fixed left-0 top-0 z-30 shadow-xl overflow-hidden"
       >
         <SidebarContent />
-        {}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute top-5 -right-3 w-6 h-6 bg-white dark:bg-slate-700 rounded-full shadow-md flex items-center justify-center border border-slate-200 dark:border-slate-600 hover:bg-slate-50"
@@ -153,7 +143,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
         </button>
       </motion.aside>
 
-      {}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -175,4 +165,5 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
     </>
   );
 };
+
 export default Sidebar;

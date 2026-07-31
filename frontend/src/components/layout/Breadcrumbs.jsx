@@ -5,7 +5,7 @@ import { ChevronRight, Home } from "lucide-react";
 const LABELS = {
   applicant:"Portal", hr:"HR Portal", admin:"Admin",
   dashboard:"Dashboard", internships:"Internships", applications:"Applications",
-  interviews:"Interviews", documents:"Documents", messages:"Messages",
+  interviews:"Interviews", documents:"Documents",
   profile:"Profile", settings:"Settings", notifications:"Notifications",
   reports:"Reports", users:"Users", departments:"Departments",
   applicants:"Applicants", roles:"Roles", "audit-logs":"Audit Logs",
