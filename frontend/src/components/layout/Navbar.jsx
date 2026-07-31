@@ -1,4 +1,4 @@
-// src/components/layout/Navbar.jsx
+
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -49,7 +49,7 @@ const Navbar = ({ collapsed, setMobileOpen }) => {
         <Menu className="w-5 h-5 text-slate-600 dark:text-slate-300" />
       </button>
 
-      {/* Search */}
+      {}
       <div className="hidden sm:flex items-center gap-2 bg-slate-100 dark:bg-slate-700 rounded-xl px-3 py-2 flex-1 max-w-xs">
         <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
         <input
@@ -59,7 +59,7 @@ const Navbar = ({ collapsed, setMobileOpen }) => {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        {/* Notifications */}
+        {}
         <div ref={notifRef} className="relative">
           <button
             onClick={() => { setNotifOpen(!notifOpen); setUserOpen(false); }}
@@ -111,7 +111,7 @@ const Navbar = ({ collapsed, setMobileOpen }) => {
           </AnimatePresence>
         </div>
 
-        {/* User menu */}
+        {}
         <div ref={userRef} className="relative">
           <button
             onClick={() => { setUserOpen(!userOpen); setNotifOpen(false); }}

@@ -1,4 +1,4 @@
-// src/pages/landing/LandingPage.jsx
+
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -37,7 +37,7 @@ const TESTIMONIALS = [
 
 const LandingPage = () => (
   <div className="min-h-screen bg-white dark:bg-slate-900 font-sans">
-    {/* Navbar */}
+    {}
     <nav className="sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
@@ -60,7 +60,7 @@ const LandingPage = () => (
       </div>
     </nav>
 
-    {/* Hero */}
+    {}
     <section className="hero-gradient relative overflow-hidden">
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-10 left-10 w-64 h-64 rounded-full bg-white blur-3xl" />
@@ -97,8 +97,8 @@ const LandingPage = () => (
           </motion.div>
         </div>
       </div>
-      
-      {/* Stats bar */}
+
+      {}
       <div className="relative bg-white/10 backdrop-blur-sm border-t border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-2 md:grid-cols-4 gap-6">
           {STATS.map((s, i) => (
@@ -114,7 +114,7 @@ const LandingPage = () => (
       </div>
     </section>
 
-    {/* Features */}
+    {}
     <section className="py-20 bg-slate-50 dark:bg-slate-800/50" id="about">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div {...fadeUp} className="text-center mb-14">
@@ -140,7 +140,7 @@ const LandingPage = () => (
       </div>
     </section>
 
-    {/* Departments */}
+    {}
     <section className="py-20 bg-white dark:bg-slate-900" id="departments">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div {...fadeUp} className="text-center mb-12">
@@ -164,7 +164,7 @@ const LandingPage = () => (
       </div>
     </section>
 
-    {/* Internships preview */}
+    {}
     <section className="py-20 bg-slate-50 dark:bg-slate-800/50" id="internships">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div {...fadeUp} className="flex items-end justify-between mb-10">
@@ -211,7 +211,7 @@ const LandingPage = () => (
       </div>
     </section>
 
-    {/* Testimonials */}
+    {}
     <section className="py-20 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div {...fadeUp} className="text-center mb-12">
@@ -236,7 +236,7 @@ const LandingPage = () => (
       </div>
     </section>
 
-    {/* Footer */}
+    {}
     <footer id="contact" className="bg-slate-900 text-slate-400 py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">

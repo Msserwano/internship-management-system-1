@@ -1,4 +1,4 @@
-// src/pages/auth/LoginPage.jsx
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -34,7 +34,7 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left form panel */}
+      {}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 bg-white dark:bg-slate-900">
         <div className="mx-auto w-full max-w-sm">
           <Link to="/" className="flex items-center gap-2 mb-10">
@@ -49,7 +49,7 @@ const LoginPage = () => {
             <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-1">Welcome back</h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">Sign in to continue to your portal.</p>
 
-            {/* Email verification removed — accounts are auto-verified in development */}
+            {}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>
@@ -96,7 +96,7 @@ const LoginPage = () => {
               <Link to="/register" className="text-primary-500 font-semibold hover:underline">Create Account</Link>
             </p>
 
-            {/* Demo credentials */}
+            {}
             <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wide">Demo Accounts</p>
               <div className="space-y-2">
@@ -117,7 +117,7 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* Right promo panel */}
+      {}
       <div className="hidden lg:flex flex-1 hero-gradient relative overflow-hidden flex-col items-center justify-center p-12 text-white">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-white blur-3xl"/>

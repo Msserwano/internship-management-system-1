@@ -1,4 +1,4 @@
-// src/components/ui/EmptyState.jsx
+
 import { motion } from "framer-motion";
 
 const EmptyState = ({ icon: Icon, title, description, action }) => (

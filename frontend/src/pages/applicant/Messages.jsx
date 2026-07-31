@@ -1,4 +1,4 @@
-// src/pages/applicant/Messages.jsx
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
@@ -67,9 +67,9 @@ const Messages = () => {
         </p>
       </div>
 
-      {/* Chat Container */}
+      {}
       <div className="card h-[600px] flex flex-col md:flex-row overflow-hidden">
-        {/* Left: Conversation List */}
+        {}
         <div className="w-full md:w-80 border-r border-slate-100 dark:border-slate-700 flex flex-col">
           <div className="p-4 border-b border-slate-100 dark:border-slate-700">
             <Input placeholder="Search messages..." icon={Search} className="!py-2 text-xs" />
@@ -102,10 +102,10 @@ const Messages = () => {
           </div>
         </div>
 
-        {/* Right: Message Detail & Input */}
+        {}
         {activeConv ? (
           <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-slate-800/30">
-            {/* Header */}
+            {}
             <div className="p-4 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
               <Avatar name={activeConv.name} size="sm" />
               <div>
@@ -114,7 +114,7 @@ const Messages = () => {
               </div>
             </div>
 
-            {/* Chat History */}
+            {}
             <div className="flex-1 p-4 overflow-y-auto space-y-3">
               {activeConv.messages.map((msg) => {
                 const isMe = msg.sender === "user";
@@ -138,7 +138,7 @@ const Messages = () => {
               })}
             </div>
 
-            {/* Message Input Box */}
+            {}
             <form onSubmit={handleSendMessage} className="p-4 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2">
               <input
                 type="text"

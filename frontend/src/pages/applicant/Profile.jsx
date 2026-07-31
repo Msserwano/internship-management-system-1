@@ -1,4 +1,4 @@
-// src/pages/applicant/Profile.jsx
+
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
@@ -73,7 +73,7 @@ const Profile = () => {
         </Button>
       </div>
 
-      {/* Header Profile Summary */}
+      {}
       <div className="card p-6 mb-6 flex flex-col sm:flex-row items-center gap-6">
         <div className="relative">
           <Avatar name={formData.name} size="xl" />
@@ -91,7 +91,7 @@ const Profile = () => {
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* Personal Information */}
+        {}
         <div className="card p-6 space-y-4">
           <h3 className="text-base font-bold text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700 flex items-center gap-2">
             <User className="w-5 h-5 text-primary-500" /> Personal Information
@@ -108,7 +108,7 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Education Details */}
+        {}
         <div className="card p-6 space-y-4">
           <h3 className="text-base font-bold text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700 flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-primary-500" /> Academic & Education Details
@@ -121,9 +121,9 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Skills & Languages */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Skills */}
+          {}
           <div className="card p-6 space-y-4">
             <h3 className="text-base font-bold text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700">
               Technical Skills
@@ -151,7 +151,7 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Emergency Contact */}
+          {}
           <div className="card p-6 space-y-4">
             <h3 className="text-base font-bold text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700">
               Emergency Contact

@@ -1,4 +1,4 @@
-// src/pages/admin/Dashboard.jsx
+
 import { Link } from "react-router-dom";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import StatCard from "../../components/ui/StatCard";
@@ -16,7 +16,7 @@ const AdminDashboard = () => {
     <div className="page-container">
       <Breadcrumbs />
 
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">System Admin Dashboard</h1>
@@ -37,7 +37,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Registered Users"
@@ -73,7 +73,7 @@ const AdminDashboard = () => {
         />
       </div>
 
-      {/* Health & Backup Status */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card p-6 space-y-3">
           <div className="flex items-center gap-3">
@@ -127,7 +127,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Recent Audit Trail */}
+      {}
       <div className="card p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-slate-800 dark:text-white text-base flex items-center gap-2">

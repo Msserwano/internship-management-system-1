@@ -1,4 +1,4 @@
-// src/pages/applicant/Settings.jsx
+
 import { useState } from "react";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Button from "../../components/ui/Button";
@@ -47,7 +47,7 @@ const Settings = () => {
         </p>
       </div>
 
-      {/* Notification Channels Settings */}
+      {}
       <div className="card p-6 space-y-6">
         <div className="flex items-center gap-2 border-b pb-4 border-slate-100 dark:border-slate-700">
           <Bell className="w-5 h-5 text-primary-500" />
@@ -103,7 +103,7 @@ const Settings = () => {
         </Button>
       </div>
 
-      {/* Change Password */}
+      {}
       <div className="card p-6 space-y-6">
         <div className="flex items-center gap-2 border-b pb-4 border-slate-100 dark:border-slate-700">
           <Lock className="w-5 h-5 text-primary-500" />

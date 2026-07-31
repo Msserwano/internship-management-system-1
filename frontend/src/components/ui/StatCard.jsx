@@ -1,4 +1,4 @@
-// src/components/ui/StatCard.jsx
+
 import { motion } from "framer-motion";
 import { cn } from "../../utils/cn";
 

@@ -6,7 +6,7 @@ const { requireAuth, requireRole, requireSelfOrRole } = require('../middleware/a
 const validate = require('../validators/validate');
 const schemaMap = require('../validators/schemaMap');
 
-// Admin-only: audit logs and purge endpoints
+
 router.get('/audit-logs', requireAuth, requireRole(['admin']), async (req, res) => {
 	try {
 		const { table, id, action, page, limit } = req.query;
@@ -17,25 +17,25 @@ router.get('/audit-logs', requireAuth, requireRole(['admin']), async (req, res) 
 	}
 });
 
-// Export audit logs (admin-only). Supports CSV or JSON via ?format=csv|json
+
 router.get('/audit-logs/export', requireAuth, requireRole(['admin']), async (req, res) => {
 	try {
 		const { table, id, action, format = 'csv', page, limit, stream } = req.query;
-		// When requesting JSON, support pagination
+
 		if (format === 'json') {
 			const result = await db.getAuditLogs({ table, id, action }, { page, limit });
 			res.setHeader('Content-Type', 'application/json');
 			return res.send(JSON.stringify(result));
 		}
 
-		// Support CSV export
+
 		if (format === 'csv') {
 			const pageSize = stream ? Number(limit) || 1000 : (limit ? Number(limit) : null);
 			res.setHeader('Content-Type', 'text/csv');
 			res.setHeader('Content-Disposition', 'attachment; filename="audit-logs.csv"');
 
 			const headers = ['logId','timestamp','action','table','targetId','actorId','actorRole','reason','removed'];
-			// Write headers
+
 			res.write(headers.join(',') + '\n');
 
 			if (stream) {
@@ -55,7 +55,7 @@ router.get('/audit-logs/export', requireAuth, requireRole(['admin']), async (req
 				return res.end();
 			}
 
-			// Non-stream CSV: return requested page or all
+
 			const result = await db.getAuditLogs({ table, id, action }, { page, limit });
 			for (const l of result.data) {
 				const actorId = l.actor && l.actor.id ? l.actor.id : '';
@@ -67,10 +67,10 @@ router.get('/audit-logs/export', requireAuth, requireRole(['admin']), async (req
 			return res.end();
 		}
 
-		// NDJSON export
+
 		if (format === 'ndjson') {
 			res.setHeader('Content-Type', 'application/x-ndjson');
-			// Streaming mode pages through results; otherwise return requested page/all
+
 			const ndPageSize = stream ? Number(limit) || 1000 : (limit ? Number(limit) : null);
 			if (stream) {
 				let currentPage = 1;
@@ -108,20 +108,20 @@ router.post('/purge/:table', requireAuth, requireRole(['admin']), async (req, re
 	}
 });
 
-// Public read of lists and items
+
 router.get('/:table', list);
 router.get('/:table/:id', getById);
 
-// Create (requires authentication and HR/Admin role)
+
 router.post('/:table', requireAuth, async (req, res) => {
 	try {
 		const table = req.params.table;
 		const map = schemaMap[table];
-		// Validate body if schema exists
+
 		if (map && map.create) {
 			await map.create.parseAsync(req.body);
 		}
-		// Authorization: only hr/admin may create
+
 		const role = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
 		if (!['hr','admin'].includes(role)) return res.status(403).json({ success: false, message: 'Forbidden' });
 		return create(req, res);
@@ -131,15 +131,15 @@ router.post('/:table', requireAuth, async (req, res) => {
 	}
 });
 
-// Update (users may update their own record; HR/Admin can update any)
+
 router.put('/:table/:id', requireAuth, async (req, res) => {
 	try {
 		const table = req.params.table;
 		const id = req.params.id;
 		const map = schemaMap[table];
-		// Authorization: if users table, allow self or HR/Admin
+
 		if (table === 'users') {
-			// requireSelfOrRole middleware logic inline
+
 			const allowedRoles = ['hr','admin'];
 			const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
 			if (!allowedRoles.includes(userRole) && String(req.user.id) !== String(id)) {
@@ -150,7 +150,7 @@ router.put('/:table/:id', requireAuth, async (req, res) => {
 			if (!['hr','admin'].includes(userRole)) return res.status(403).json({ success: false, message: 'Forbidden' });
 		}
 
-		// Validate if schema exists
+
 		if (map && map.update) {
 			await map.update.parseAsync(req.body);
 		}
@@ -162,11 +162,11 @@ router.put('/:table/:id', requireAuth, async (req, res) => {
 	}
 });
 
-// Delete (admin only)
+
 router.delete('/:table/:id', requireAuth, (req, res) => {
 	const userRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
 	const table = req.params.table;
-	// Allow admins to delete anything. Allow HR to delete internship postings and applications.
+
 	if (userRole === 'admin') return remove(req, res);
 	if (userRole === 'hr' && ['internships', 'applications'].includes(table)) return remove(req, res);
 	return res.status(403).json({ success: false, message: 'Forbidden' });

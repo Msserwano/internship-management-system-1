@@ -1,4 +1,4 @@
-// src/components/layout/Breadcrumbs.jsx
+
 import { Link, useLocation } from "react-router-dom";
 import { ChevronRight, Home } from "lucide-react";
 

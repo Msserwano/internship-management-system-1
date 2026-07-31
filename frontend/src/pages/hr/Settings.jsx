@@ -1,4 +1,4 @@
-// src/pages/hr/Settings.jsx
+
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
@@ -31,7 +31,7 @@ const HRSettings = () => {
           <Input label="Default Application Open Period (Days)" type="number" defaultValue={30} />
           <Input label="Maximum Applications Per Candidate" type="number" defaultValue={2} />
           <Input label="HR Contact Email for Portal Inquiries" defaultValue="internships@kcca.go.ug" />
-          
+
           <Button type="submit" variant="primary" size="md" icon={Save}>
             Save Configuration
           </Button>

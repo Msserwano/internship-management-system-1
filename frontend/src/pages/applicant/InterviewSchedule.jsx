@@ -1,4 +1,4 @@
-// src/pages/applicant/InterviewSchedule.jsx
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
@@ -65,7 +65,7 @@ const InterviewSchedule = () => {
               animate={{ opacity: 1, y: 0 }}
               className="card p-6 md:p-8 space-y-6 border-l-4 border-l-primary-500"
             >
-              {/* Header */}
+              {}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-700">
                 <div>
                   <span className="badge badge-shortlisted text-xs mb-2">Interview Invitation</span>
@@ -75,7 +75,7 @@ const InterviewSchedule = () => {
                   <p className="text-xs text-primary-600 font-semibold">{ivw.department} Directorate</p>
                 </div>
 
-                {/* Status response badge */}
+                {}
                 {ivw.response === "accepted" ? (
                   <span className="badge badge-accepted text-xs py-1 px-3">
                     <CheckCircle2 className="w-4 h-4 mr-1 inline" /> Accepted
@@ -91,7 +91,7 @@ const InterviewSchedule = () => {
                 )}
               </div>
 
-              {/* Schedule Info Grid */}
+              {}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-1">
                   <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
@@ -130,7 +130,7 @@ const InterviewSchedule = () => {
                 </div>
               </div>
 
-              {/* Panel Members & Instructions */}
+              {}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                 <div>
                   <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1">
@@ -156,7 +156,7 @@ const InterviewSchedule = () => {
                 </div>
               </div>
 
-              {/* Actions */}
+              {}
               {!ivw.response && (
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
                   <Button variant="ghost" size="sm" className="text-danger" onClick={() => setDeclineTarget(ivw)}>
@@ -178,7 +178,7 @@ const InterviewSchedule = () => {
         />
       )}
 
-      {/* Decline Confirm Dialog */}
+      {}
       <ConfirmDialog
         open={!!declineTarget}
         onClose={() => setDeclineTarget(null)}

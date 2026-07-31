@@ -1,4 +1,4 @@
-// src/pages/applicant/Dashboard.jsx
+
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -29,7 +29,7 @@ const ApplicantDashboard = () => {
     <div className="page-container">
       <Breadcrumbs />
 
-      {/* Welcome Banner - Exact design match to user reference */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -65,7 +65,7 @@ const ApplicantDashboard = () => {
         </div>
       </motion.div>
 
-      {/* KPI Cards Grid */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Open Vacancies"
@@ -97,14 +97,14 @@ const ApplicantDashboard = () => {
         />
       </div>
 
-      {/* Application Status Breakdown Bar */}
+      {}
       <div className="card p-6">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-slate-800 dark:text-white text-base">Application Status Breakdown</h3>
           <span className="text-xs text-slate-500">Total: {totalApps}</span>
         </div>
-        
-        {/* Progress visual bar */}
+
+        {}
         <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex gap-0.5">
           <div className="h-full bg-yellow-400" style={{ width: totalApps ? `${(pendingCount / totalApps) * 100}%` : '0%' }} title="Under Review" />
           <div className="h-full bg-purple-500" style={{ width: totalApps ? `${(shortlistedCount / totalApps) * 100}%` : '0%' }} title="Shortlisted" />
@@ -127,9 +127,9 @@ const ApplicantDashboard = () => {
         </div>
       </div>
 
-      {/* Main 2-column layout: Recent Applications (Left) vs Profile Card (Right) */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Recent Applications */}
+        {}
         <div className="lg:col-span-2 space-y-4">
           <div className="card p-6">
             <div className="flex items-center justify-between mb-5">
@@ -187,12 +187,12 @@ const ApplicantDashboard = () => {
           </div>
         </div>
 
-        {/* Right Column: Profile Summary & Featured Vacancies */}
+        {}
         <div className="space-y-6">
-          {/* Profile Card */}
+          {}
           <div className="card p-6">
             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Your Profile</h3>
-            
+
             <div className="space-y-3 text-sm">
               <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-700">
                 <span className="text-slate-500">Name</span>
@@ -235,7 +235,7 @@ const ApplicantDashboard = () => {
             </Link>
           </div>
 
-          {/* Featured Vacancies */}
+          {}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-slate-800 dark:text-white">Featured Vacancies</h3>

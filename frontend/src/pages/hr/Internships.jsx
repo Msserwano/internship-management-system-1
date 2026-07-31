@@ -1,4 +1,4 @@
-// src/pages/hr/Internships.jsx
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
@@ -23,7 +23,7 @@ const HRInternships = () => {
   const [editItem, setEditItem]   = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  // Form fields
+
   const [formData, setFormData] = useState({
     title: "",
     department: KCCA_DEPARTMENTS[0],
@@ -148,7 +148,7 @@ const HRInternships = () => {
         </Button>
       </div>
 
-      {/* Filter Bar */}
+      {}
       <div className="card p-4">
         <Input
           placeholder="Search postings by title or department..."
@@ -159,7 +159,7 @@ const HRInternships = () => {
         />
       </div>
 
-      {/* Table / List */}
+      {}
       <div className="card p-6">
         <div className="overflow-x-auto">
           <table className="data-table">
@@ -221,7 +221,7 @@ const HRInternships = () => {
         </div>
       </div>
 
-      {/* Modal Form for Create / Edit */}
+      {}
       {modalOpen && (
         <Modal
           open={modalOpen}
@@ -319,7 +319,7 @@ const HRInternships = () => {
         </Modal>
       )}
 
-      {/* Confirm Delete Dialog */}
+      {}
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}

@@ -1,4 +1,4 @@
-// backend/src/config/db.js
+
 const { Pool } = require("pg");
 const fs = require("fs");
 const path = require("path");
@@ -6,12 +6,12 @@ const path = require("path");
 const DATA_FILE = path.join(__dirname, "../data/dbStore.json");
 const DATA_DIR  = path.join(__dirname, "../data");
 
-// Create data directory if missing
+
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// PostgreSQL connection pool configuration
+
 let pool = null;
 let pgConnected = false;
 
@@ -26,7 +26,7 @@ if (process.env.DATABASE_URL) {
   }
 }
 
-// Initial seed tables & records
+
 const INITIAL_DB = {
   users: [
     { id: "U001", name: "Sarah Nakimuli", firstName: "Sarah", lastName: "Nakimuli", email: "applicant@kcca.go.ug", password: "password123", role: "applicant", phone: "+256 701 234 567", gender: "Female", district: "Kampala", nationality: "Ugandan", status: "active", createdAt: "2026-07-01T00:00:00.000Z", isVerified: true },
@@ -56,18 +56,18 @@ const INITIAL_DB = {
     { id: "IVW001", applicationId: "APP001", applicantName: "Sarah Nakimuli", internshipTitle: "Software Development Intern", department: "ICT", date: "2026-08-05", time: "10:00 AM", venue: "KCCA Boardroom 2, City Hall", meetingLink: "https://meet.google.com/kcca-int-2026", status: "scheduled" },
   ]
   ,
-  // Audit log for destructive operations
+
   auditLogs: []
 };
 
-// Memory store initialized from disk or default seed
+
 let dbStore = { ...INITIAL_DB };
 
 const loadDbStore = () => {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
-      // Ensure auditLogs exists and merge data safely
+
       dbStore = { ...INITIAL_DB, ...data };
       if (!dbStore.auditLogs) dbStore.auditLogs = [];
     } else {
@@ -88,11 +88,9 @@ const saveDbStore = () => {
 
 loadDbStore();
 
-/**
- * Generic CRUD helper methods
- */
+
 const db = {
-  // Check health / mode
+
   async isPostgresActive() {
     if (!pool) return false;
     try {
@@ -104,16 +102,16 @@ const db = {
     }
   },
 
-  // ── RETRIEVE (FIND ALL / FILTER) ──────────────────────────────────────────
+
   async find(table, filterFn = null) {
     const list = dbStore[table] || [];
-    // By default skip soft-deleted records
+
     const active = list.filter((item) => !item || item.deleted !== true);
     if (!filterFn) return [...active];
     return active.filter(filterFn);
   },
 
-  // ── RETRIEVE BY ID ────────────────────────────────────────────────────────
+
   async findById(table, id) {
     const list = dbStore[table] || [];
     const item = list.find((item) => String(item.id) === String(id)) || null;
@@ -122,7 +120,7 @@ const db = {
     return item;
   },
 
-  // ── WRITE / STORE (CREATE) ────────────────────────────────────────────────
+
   async create(table, record) {
     if (!dbStore[table]) dbStore[table] = [];
     const newRecord = {
@@ -135,7 +133,7 @@ const db = {
     return newRecord;
   },
 
-  // ── EDIT / MODIFY (UPDATE) ────────────────────────────────────────────────
+
   async update(table, id, updates) {
     const list = dbStore[table] || [];
     const idx = list.findIndex((item) => String(item.id) === String(id));
@@ -151,7 +149,7 @@ const db = {
     return updated;
   },
 
-  // ── DELETE ────────────────────────────────────────────────────────────────
+
   async appendAuditLog(entry) {
     if (!dbStore.auditLogs) dbStore.auditLogs = [];
     const log = { id: `LOG${Date.now()}`, timestamp: new Date().toISOString(), ...entry };
@@ -160,8 +158,8 @@ const db = {
     return log;
   },
 
-  // filter: { table, id, action }
-  // options: { page, limit }
+
+
   async getAuditLogs(filter = {}, options = {}) {
     const logs = dbStore.auditLogs || [];
     const filtered = logs.filter((l) => {
@@ -178,14 +176,14 @@ const db = {
     return { total, page, limit, data };
   },
 
-  // Permanently remove soft-deleted records in a table and record audit entries
+
   async purgeDeleted(table) {
     const list = dbStore[table] || [];
     const toRemove = list.filter((it) => it && it.deleted === true);
     if (toRemove.length === 0) return { removed: 0 };
-    // Remove items
+
     dbStore[table] = list.filter((it) => !(it && it.deleted === true));
-    // Log removals
+
     for (const it of toRemove) {
       await this.appendAuditLog({ action: 'purge', table, id: it.id, removed: it });
     }
@@ -193,7 +191,7 @@ const db = {
     return { removed: toRemove.length };
   },
 
-  // opts: { soft: true|false, actor: {id, role}, reason }
+
   async delete(table, id, opts = { soft: true, actor: null, reason: null }) {
     const list = dbStore[table] || [];
     const idx = list.findIndex((item) => String(item.id) === String(id));
@@ -203,7 +201,7 @@ const db = {
     const reason = opts.reason || null;
 
     if (opts.soft) {
-      // Mark deleted flag and metadata
+
       list[idx] = {
         ...list[idx],
         deleted: true,
@@ -216,7 +214,7 @@ const db = {
       return true;
     }
 
-    // Hard delete
+
     const removed = list.splice(idx, 1);
     saveDbStore();
     await this.appendAuditLog({ action: 'delete', table, id, actor, reason, removed: removed[0] });

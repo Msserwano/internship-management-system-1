@@ -1,4 +1,4 @@
-// src/api/mockData.js
+
 import { KCCA_DEPARTMENTS } from "../utils/constants";
 
 export const MOCK_USERS = {
@@ -34,7 +34,7 @@ export const MOCK_USERS = {
 
 export const MOCK_INTERNSHIPS = [
   { id: "INT001", title: "Software Development Intern", department: "ICT",
-    description: "Work with the ICT team to develop and maintain internal systems used across KCCA divisions. You will be involved in both front-end and back-end development, database management, and system testing.", 
+    description: "Work with the ICT team to develop and maintain internal systems used across KCCA divisions. You will be involved in both front-end and back-end development, database management, and system testing.",
     requirements: ["Computer Science or IT degree", "2nd year and above", "Basic knowledge of web technologies", "Problem-solving skills"],
     qualifications: "Bachelor's Degree", vacancies: 4, deadline: "2026-08-15", supervisor: "Mr. Peter Mwesigwa",
     duration: "3 Months", location: "City Hall – Kampala", status: "open", posted: "2026-07-01", applicants: 23 },

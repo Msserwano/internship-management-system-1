@@ -1,4 +1,4 @@
-// src/pages/applicant/AvailableInternships.jsx
+
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -61,7 +61,7 @@ const AvailableInternships = () => {
         </div>
       </div>
 
-      {/* Search & Filters Bar */}
+      {}
       <div className="card p-5 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Input
@@ -102,7 +102,7 @@ const AvailableInternships = () => {
         )}
       </div>
 
-      {/* Internships Grid / Cards */}
+      {}
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((job, idx) => (
@@ -133,7 +133,7 @@ const AvailableInternships = () => {
                   {job.description}
                 </p>
 
-                {/* Key attributes */}
+                {}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                     <Clock className="w-4 h-4 text-slate-400" />
@@ -176,7 +176,7 @@ const AvailableInternships = () => {
         />
       )}
 
-      {/* Internship Details Modal */}
+      {}
       {selectedJob && (
         <Modal
           open={!!selectedJob}

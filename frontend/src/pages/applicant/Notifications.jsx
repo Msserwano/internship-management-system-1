@@ -1,4 +1,4 @@
-// src/pages/applicant/Notifications.jsx
+
 import { useState } from "react";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Button from "../../components/ui/Button";
@@ -37,7 +37,7 @@ const Notifications = () => {
         )}
       </div>
 
-      {/* Filter Tabs */}
+      {}
       <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
         {["all", "unread"].map((tab) => (
           <button
@@ -54,7 +54,7 @@ const Notifications = () => {
         ))}
       </div>
 
-      {/* Notification List */}
+      {}
       {filteredNotifs.length > 0 ? (
         <div className="card divide-y divide-slate-100 dark:divide-slate-700">
           {filteredNotifs.map((n) => (
@@ -78,8 +78,8 @@ const Notifications = () => {
                   <span className="text-[11px] text-slate-400">{fRelative(n.createdAt)}</span>
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{n.message}</p>
-                
-                {/* Notification channel indicators */}
+
+                {}
                 <div className="flex items-center gap-3 mt-3 text-[10px] text-slate-400">
                   <span className="flex items-center gap-1"><Mail className="w-3 h-3"/> Sent to Email</span>
                   <span className="flex items-center gap-1"><Smartphone className="w-3 h-3"/> Sent via SMS</span>

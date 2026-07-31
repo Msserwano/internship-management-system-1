@@ -1,4 +1,4 @@
-// backend/src/middleware/authJwt.js
+
 const jwt = require('jsonwebtoken');
 const logger = require('../config/logger');
 
@@ -8,9 +8,7 @@ if (process.env.NODE_ENV === "production" && !JWT_SECRET) {
   throw new Error("JWT_SECRET must be set in production.");
 }
 
-/**
- * Verify JWT in Authorization header 'Bearer <token>'
- */
+
 const requireAuth = (req, res, next) => {
   const authHeader = req.get('Authorization') || req.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -28,10 +26,7 @@ const requireAuth = (req, res, next) => {
   }
 };
 
-/**
- * Require that the authenticated user has one of the allowed roles
- * @param {string[]} allowedRoles
- */
+
 const requireRole = (allowedRoles = []) => (req, res, next) => {
   if (!req.user) return res.status(401).json({ success: false, message: 'Unauthorized' });
   const userRole = (req.user.role || '').toLowerCase();
@@ -42,7 +37,7 @@ const requireRole = (allowedRoles = []) => (req, res, next) => {
   next();
 };
 
-/** Allow a user to access only their own resource unless they are HR or an administrator. */
+
 const requireSelfOrRole = (idParam = "id", allowedRoles = ["hr", "admin"]) => (req, res, next) => {
   if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
   if (allowedRoles.includes(String(req.user.role).toLowerCase()) || String(req.user.id) === String(req.params[idParam])) {

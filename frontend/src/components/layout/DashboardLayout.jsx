@@ -1,4 +1,4 @@
-// src/components/layout/DashboardLayout.jsx
+
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -20,7 +20,7 @@ const DashboardLayout = () => {
         className={cn("transition-all duration-300 pt-16 min-h-screen", "ml-0 md:ml-auto")}
         style={{ marginLeft: undefined }}
       >
-        {/* Desktop margin handled via CSS */}
+        {}
         <div
           className="transition-all duration-300 min-h-screen"
           style={{ marginLeft: 0 }}
@@ -28,7 +28,7 @@ const DashboardLayout = () => {
           <Outlet />
         </div>
       </motion.main>
-      {/* Desktop push layout */}
+      {}
       <style>{`
         @media (min-width: 768px) {
           main { margin-left: ${collapsed ? 72 : 260}px !important; }

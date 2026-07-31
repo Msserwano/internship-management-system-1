@@ -1,4 +1,4 @@
-// src/context/NotificationsContext.jsx
+
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { notificationService } from "../api/services";
 import { useAuth } from "./AuthContext";
@@ -53,7 +53,7 @@ export function NotificationsProvider({ children }) {
     fetchNotifications();
     const iv = setInterval(fetchNotifications, 30000);
     return () => clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [user]);
 
   const unread = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);

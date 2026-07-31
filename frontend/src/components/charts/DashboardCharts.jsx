@@ -1,4 +1,4 @@
-// src/components/charts/DashboardCharts.jsx
+
 import {
   Chart as ChartJS,
   CategoryScale,

@@ -1,4 +1,4 @@
-// backend/src/controllers/userController.js
+
 const { getPool } = require('../config/database');
 const bcrypt = require('bcryptjs');
 
@@ -25,11 +25,11 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    // Try by id first
+
     let result = await pool.query('SELECT id, name, first_name, last_name, email, role, phone, status, is_verified, created_at FROM users WHERE id = $1', [id]);
     let user = result.rows[0];
     if (!user) {
-      // try by email
+
       result = await pool.query('SELECT id, name, first_name, last_name, email, role, phone, status, is_verified, created_at FROM users WHERE LOWER(email) = LOWER($1)', [id]);
       user = result.rows[0];
     }

@@ -1,4 +1,4 @@
-// src/pages/hr/Dashboard.jsx
+
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
@@ -29,7 +29,7 @@ const HRDashboard = () => {
     <div className="page-container">
       <Breadcrumbs />
 
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">HR Officer Dashboard</h1>
@@ -52,7 +52,7 @@ const HRDashboard = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           title="Total Applications"
@@ -96,7 +96,7 @@ const HRDashboard = () => {
         />
       </div>
 
-      {/* Charts Row 1: Applications by Department & Status Breakdown */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 card p-6">
           <h3 className="font-bold text-slate-800 dark:text-white text-base mb-4">
@@ -113,7 +113,7 @@ const HRDashboard = () => {
         </div>
       </div>
 
-      {/* Charts Row 2: Monthly Applications Trend, Gender Distribution, Top Universities */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card p-6">
           <h3 className="font-bold text-slate-800 dark:text-white text-base mb-4">
@@ -137,7 +137,7 @@ const HRDashboard = () => {
         </div>
       </div>
 
-      {/* Recent Applications Table */}
+      {}
       <div className="card p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-slate-800 dark:text-white text-base">Recent Applications Received</h3>

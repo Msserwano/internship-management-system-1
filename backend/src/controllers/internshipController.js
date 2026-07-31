@@ -1,11 +1,9 @@
-// backend/src/controllers/internshipController.js
+
 const { getPool } = require("../config/database");
 const db = require("../config/db");
 const pool = getPool();
 
-/**
- * Retrieve all internships (with optional query filter e.g. ?department=ICT&search=software)
- */
+
 const getAllInternships = async (req, res) => {
   try {
     const { department, search, status } = req.query;
@@ -39,9 +37,7 @@ const getAllInternships = async (req, res) => {
   }
 };
 
-/**
- * Retrieve a single internship by ID
- */
+
 const getInternshipById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -55,9 +51,7 @@ const getInternshipById = async (req, res) => {
   }
 };
 
-/**
- * Store / Write a new internship posting (Create)
- */
+
 const createInternship = async (req, res) => {
   try {
     const { title, department, description, vacancies, deadline, supervisor, duration, location } = req.body;
@@ -74,9 +68,7 @@ const createInternship = async (req, res) => {
   }
 };
 
-/**
- * Edit / Modify internship details (Update)
- */
+
 const updateInternship = async (req, res) => {
   try {
     const { id } = req.params;
@@ -104,15 +96,13 @@ const updateInternship = async (req, res) => {
   }
 };
 
-/**
- * Delete internship posting
- */
+
 const deleteInternship = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query('DELETE FROM internships WHERE id = $1 RETURNING id', [id]);
     if (result.rowCount === 0) return res.status(404).json({ success: false, message: 'Internship not found or already deleted.' });
-    // Record audit log for deletion
+
     const actor = req.user ? { id: req.user.id, role: req.user.role } : null;
     const reason = req.body && req.body.reason ? req.body.reason : req.query && req.query.reason ? req.query.reason : null;
     await db.appendAuditLog({ action: 'delete', table: 'internships', id: result.rows[0].id, actor, reason });

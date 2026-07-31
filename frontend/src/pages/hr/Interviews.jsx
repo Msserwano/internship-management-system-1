@@ -1,4 +1,4 @@
-// src/pages/hr/Interviews.jsx
+
 import { useState } from "react";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Button from "../../components/ui/Button";
@@ -79,7 +79,7 @@ const HRInterviews = () => {
         </Button>
       </div>
 
-      {/* Calendar Header / Overview */}
+      {}
       <div className="card p-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-gradient-to-r from-primary-600 to-primary-800 text-white">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -97,7 +97,7 @@ const HRInterviews = () => {
         </div>
       </div>
 
-      {/* Scheduled Interviews Cards */}
+      {}
       <div className="space-y-4">
         {interviews.map((ivw) => (
           <div key={ivw.id} className="card p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -124,7 +124,7 @@ const HRInterviews = () => {
         ))}
       </div>
 
-      {/* Schedule Modal */}
+      {}
       {modalOpen && (
         <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Schedule Panel Interview" size="lg">
           <form onSubmit={handleSchedule} className="p-6 space-y-4">

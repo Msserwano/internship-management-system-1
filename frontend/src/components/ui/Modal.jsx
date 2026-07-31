@@ -1,4 +1,4 @@
-// src/components/ui/Modal.jsx
+
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";

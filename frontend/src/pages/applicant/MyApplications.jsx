@@ -1,4 +1,4 @@
-// src/pages/applicant/MyApplications.jsx
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
@@ -66,7 +66,7 @@ const MyApplications = () => {
         </p>
       </div>
 
-      {/* Status Summary Bar Cards */}
+      {}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         {[
           { label: "Submitted", count: counts.submitted, color: "text-blue-600 bg-blue-50" },
@@ -83,7 +83,7 @@ const MyApplications = () => {
         ))}
       </div>
 
-      {/* Applications List */}
+      {}
       {applications.length > 0 ? (
         <div className="space-y-4">
           {applications.map((app) => (
@@ -104,7 +104,7 @@ const MyApplications = () => {
                   Department: <strong className="text-slate-700 dark:text-slate-300 font-semibold">{app.department}</strong> • Submitted on {fDate(app.submittedAt)}
                 </p>
 
-                {/* Progress bar preview */}
+                {}
                 <div className="flex items-center gap-2 pt-1 max-w-md">
                   {["submitted", "under_review", "shortlisted", "interview", "accepted"].map((stepStatus, idx) => {
                     const statusOrder = ["submitted", "under_review", "shortlisted", "interview", "accepted"];
@@ -129,7 +129,7 @@ const MyApplications = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {}
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => setSelectedApp(app)} icon={Eye}>
                   Timeline & Details
@@ -158,7 +158,7 @@ const MyApplications = () => {
         />
       )}
 
-      {/* Timeline Modal */}
+      {}
       {selectedApp && (
         <Modal open={!!selectedApp} onClose={() => setSelectedApp(null)} title="Application Details & Timeline" size="lg">
           <div className="p-6 space-y-6">
@@ -170,10 +170,10 @@ const MyApplications = () => {
               <Badge status={selectedApp.status} />
             </div>
 
-            {/* Application Timeline Visual */}
+            {}
             <div className="card p-5 bg-slate-50 dark:bg-slate-700/40 border-none">
               <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-4">Application History</h4>
-              
+
               <div className="space-y-4 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-600">
                 {selectedApp.timeline?.map((item, idx) => (
                   <div key={idx} className="flex items-start gap-4 relative pl-8">
@@ -208,7 +208,7 @@ const MyApplications = () => {
         </Modal>
       )}
 
-      {/* Withdraw Dialog */}
+      {}
       <ConfirmDialog
         open={!!withdrawTarget}
         onClose={() => setWithdrawTarget(null)}

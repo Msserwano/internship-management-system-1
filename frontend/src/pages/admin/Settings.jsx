@@ -1,4 +1,4 @@
-// src/pages/admin/Settings.jsx
+
 import { useState } from "react";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Button from "../../components/ui/Button";
@@ -30,7 +30,7 @@ const AdminSettings = () => {
         </p>
       </div>
 
-      {/* Database Backup & Restore Card */}
+      {}
       <div className="card p-6 space-y-4">
         <h3 className="font-bold text-base text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700 flex items-center gap-2">
           <Database className="w-5 h-5 text-primary-500" /> Database Backup & Disaster Recovery
@@ -55,7 +55,7 @@ const AdminSettings = () => {
         </div>
       </div>
 
-      {/* System Gateway Config */}
+      {}
       <div className="card p-6 space-y-4">
         <h3 className="font-bold text-base text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700 flex items-center gap-2">
           <RefreshCw className="w-5 h-5 text-primary-500" /> Infrastructure Gateways

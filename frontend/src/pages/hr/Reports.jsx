@@ -1,4 +1,4 @@
-// src/pages/hr/Reports.jsx
+
 import { useState } from "react";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Button from "../../components/ui/Button";
@@ -28,7 +28,7 @@ const HRReports = () => {
         </p>
       </div>
 
-      {/* Generator Form Card */}
+      {}
       <div className="card p-6 space-y-6">
         <h3 className="font-bold text-base text-slate-800 dark:text-white border-b pb-3 border-slate-100 dark:border-slate-700 flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary-500" /> Report Configuration
@@ -72,10 +72,10 @@ const HRReports = () => {
         </div>
       </div>
 
-      {/* Live Preview Table Card */}
+      {}
       <div className="card p-6 space-y-4">
         <h3 className="font-bold text-base text-slate-800 dark:text-white">Generated Report Preview ({reportType})</h3>
-        
+
         <div className="overflow-x-auto">
           <table className="data-table">
             <thead>

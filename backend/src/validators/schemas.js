@@ -1,12 +1,8 @@
-// backend/src/validators/schemas.js
-/**
- * Zod Validation Schemas
- */
+
+
 const { z } = require("zod");
 
-/**
- * Auth Schemas
- */
+
 const authSchemas = {
   register: z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -29,9 +25,7 @@ const authSchemas = {
   }),
 };
 
-/**
- * User Schemas
- */
+
 const userSchemas = {
   create: z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -50,16 +44,14 @@ const userSchemas = {
   }),
 };
 
-/**
- * Internship Schemas
- */
+
 const internshipSchemas = {
   create: z.object({
     title: z.string().min(5, "Title must be at least 5 characters"),
     department: z.string().min(2, "Department is required"),
     description: z.string().min(20, "Description must be at least 20 characters"),
     vacancies: z.number().min(1, "Must have at least 1 vacancy"),
-    // Accept ISO date strings; ensure valid date and that it's in the future
+
     deadline: z.string().refine((date) => {
       const d = new Date(date);
       return !Number.isNaN(d.getTime()) && d > new Date();
@@ -82,9 +74,7 @@ const internshipSchemas = {
   }),
 };
 
-/**
- * Application Schemas
- */
+
 const applicationSchemas = {
   create: z.object({
     internshipId: z.string().min(1, "Internship ID is required"),
@@ -99,18 +89,16 @@ const applicationSchemas = {
   }),
 };
 
-/**
- * Interview Schemas
- */
+
 const interviewSchemas = {
   create: z.object({
     applicationId: z.string().min(1, "Application ID is required"),
-    // Ensure a valid ISO date in the future
+
     interviewDate: z.string().refine((date) => {
       const d = new Date(date);
       return !Number.isNaN(d.getTime()) && d > new Date();
     }, "Interview date must be a valid future date"),
-    // Enforce 24-hour time HH:MM where hours 00-23 and minutes 00-59
+
     interviewTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Time must be in HH:MM 24-hour format"),
     venue: z.string().min(5, "Venue is required"),
     meetingLink: z.string().url().optional(),
@@ -125,12 +113,10 @@ const interviewSchemas = {
   }),
 };
 
-/**
- * Query Schemas
- */
+
 const querySchemas = {
   pagination: z.object({
-    // Parse numeric query params into integers and enforce minimums
+
     page: z.preprocess((val) => (val === undefined ? undefined : Number(val)), z.number().int().min(1).optional()),
     limit: z.preprocess((val) => (val === undefined ? undefined : Number(val)), z.number().int().min(1).optional()),
   }),

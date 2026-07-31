@@ -1,11 +1,9 @@
-// backend/src/controllers/interviewController.js
+
 const { getPool } = require("../config/database");
 const pool = getPool();
 const isStaff = (user) => ["hr", "admin"].includes(String(user?.role).toLowerCase());
 
-/**
- * Retrieve interviews (with optional status/applicationId filter)
- */
+
 const getAllInterviews = async (req, res) => {
   try {
     const { applicationId, status } = req.query;
@@ -25,9 +23,7 @@ const getAllInterviews = async (req, res) => {
   }
 };
 
-/**
- * Retrieve interview by ID
- */
+
 const getInterviewById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -44,9 +40,7 @@ const getInterviewById = async (req, res) => {
   }
 };
 
-/**
- * Store / Schedule a new interview (Create)
- */
+
 const scheduleInterview = async (req, res) => {
   try {
     const { applicationId, applicantName, internshipTitle, department, date, time, venue, meetingLink, instructions } = req.body;
@@ -58,7 +52,7 @@ const scheduleInterview = async (req, res) => {
       const q = `INSERT INTO interviews (id, application_id, interview_date, interview_time, venue, meeting_link, status, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,NOW()) RETURNING *`;
       const params = [id, applicationId, date, time, venue.trim(), meetingLink || null, 'scheduled'];
       const resIns = await client.query(q, params);
-      // update application status
+
       await client.query('UPDATE applications SET status = $1, updated_at=NOW() WHERE id = $2', ['interview', applicationId]);
       await client.query('COMMIT');
       client.release();
@@ -74,9 +68,7 @@ const scheduleInterview = async (req, res) => {
   }
 };
 
-/**
- * Edit / Modify interview details (Update)
- */
+
 const updateInterview = async (req, res) => {
   try {
     const { id } = req.params;
@@ -107,9 +99,7 @@ const updateInterview = async (req, res) => {
   }
 };
 
-/**
- * Delete / Cancel interview
- */
+
 const deleteInterview = async (req, res) => {
   try {
     const { id } = req.params;

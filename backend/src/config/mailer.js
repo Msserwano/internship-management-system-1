@@ -1,21 +1,21 @@
-// backend/src/config/mailer.js
+
 const nodemailer = require("nodemailer");
 
 const createTransporter = () => {
   const user = process.env.EMAIL_USER;
-  // Support either EMAIL_PASS (older) or EMAIL_PASSWORD (common)
+
   const pass = process.env.EMAIL_PASS || process.env.EMAIL_PASSWORD;
 
-  // Basic sanity checks: if missing credentials or placeholder address, fall back to console mode
+
   if (!user || !pass || (typeof user === "string" && /your-?email/i.test(user))) {
     console.warn('[MAILER] SMTP not configured: please set EMAIL_USER and EMAIL_PASSWORD (or EMAIL_PASS) in .env');
-    return null; // Signals fallback to console mode
+    return null;
   }
 
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: parseInt(process.env.SMTP_PORT || "587", 10),
-    secure: String(process.env.SMTP_PORT) === "465", // true for 465, false for 587
+    secure: String(process.env.SMTP_PORT) === "465",
     auth: {
       user: user,
       pass: pass,
@@ -23,13 +23,11 @@ const createTransporter = () => {
   });
 };
 
-/**
- * Sends a 6-digit email verification code to the recipient.
- */
+
 const sendVerificationEmail = async (toEmail, otpCode, firstName = "Applicant") => {
   const transporter = createTransporter();
 
-  // HTML email layout with KCCA styling
+
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-radius: 12px; background-color: #ffffff;">
       <div style="background-color: #0284c7; padding: 16px; text-align: center; border-radius: 8px 8px 0 0;">
@@ -87,9 +85,7 @@ const sendVerificationEmail = async (toEmail, otpCode, firstName = "Applicant") 
 
 module.exports = {
   sendVerificationEmail,
-  /**
-   * Send a generic notification email (used for HR notifications)
-   */
+
   sendNotificationEmail: async (toEmail, subject, htmlContent, textContent = '') => {
     const transporter = createTransporter();
 

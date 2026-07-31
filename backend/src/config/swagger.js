@@ -1,7 +1,5 @@
-// backend/src/config/swagger.js
-/**
- * Swagger/OpenAPI Configuration
- */
+
+
 const swaggerJsdoc = require("swagger-jsdoc");
 
 const options = {

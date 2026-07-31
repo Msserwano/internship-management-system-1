@@ -1,4 +1,4 @@
-// src/components/ui/Avatar.jsx
+
 import { cn } from "../../utils/cn";
 import { initials } from "../../utils/formatters";
 

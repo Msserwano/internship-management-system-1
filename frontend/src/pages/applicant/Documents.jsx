@@ -1,4 +1,4 @@
-// src/pages/applicant/Documents.jsx
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
@@ -62,7 +62,7 @@ const Documents = () => {
         </label>
       </div>
 
-      {/* Required Docs Checklist */}
+      {}
       <div className="card p-6 bg-slate-50 dark:bg-slate-800 border-none">
         <h3 className="font-bold text-sm text-slate-800 dark:text-white mb-3">
           Required Document Verification Status
@@ -92,7 +92,7 @@ const Documents = () => {
         </div>
       </div>
 
-      {/* Document Cards Grid */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {docs.map((doc, idx) => (
           <motion.div
@@ -118,7 +118,7 @@ const Documents = () => {
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <span className="text-[10px] text-slate-400">Uploaded {doc.date}</span>
-              
+
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setPreviewDoc(doc)}
@@ -147,7 +147,7 @@ const Documents = () => {
         ))}
       </div>
 
-      {/* Document Preview Modal */}
+      {}
       {previewDoc && (
         <Modal open={!!previewDoc} onClose={() => setPreviewDoc(null)} title={previewDoc.name} size="lg">
           <div className="p-6 text-center space-y-4">
@@ -156,7 +156,7 @@ const Documents = () => {
             </div>
             <p className="text-sm font-semibold text-slate-800 dark:text-white">{previewDoc.filename}</p>
             <p className="text-xs text-slate-400">Document Size: {previewDoc.size} • Uploaded on {previewDoc.date}</p>
-            
+
             <div className="p-10 bg-slate-100 dark:bg-slate-700/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600">
               <p className="text-xs text-slate-500">Document Viewer Preview Simulated for {previewDoc.name}</p>
             </div>

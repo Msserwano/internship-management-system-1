@@ -1,4 +1,4 @@
-// src/pages/hr/Applicants.jsx
+
 import { useState } from "react";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Button from "../../components/ui/Button";

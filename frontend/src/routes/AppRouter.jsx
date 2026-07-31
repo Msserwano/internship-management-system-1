@@ -1,19 +1,19 @@
-// src/routes/AppRouter.jsx
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Loader2 } from "lucide-react";
 
-// Layouts
+
 import DashboardLayout from "../components/layout/DashboardLayout";
 
-// Public pages
+
 import LandingPage      from "../pages/landing/LandingPage";
 import LoginPage        from "../pages/auth/LoginPage";
 import RegisterPage     from "../pages/auth/RegisterPage";
 import ForgotPassword   from "../pages/auth/ForgotPassword";
 import ResetPassword    from "../pages/auth/ResetPassword";
 
-// Applicant pages
+
 import ApplicantDashboard   from "../pages/applicant/Dashboard";
 import AvailableInternships from "../pages/applicant/AvailableInternships";
 import MyApplications       from "../pages/applicant/MyApplications";
@@ -25,7 +25,7 @@ import ApplicantProfile     from "../pages/applicant/Profile";
 import ApplicantSettings    from "../pages/applicant/Settings";
 import Notifications        from "../pages/applicant/Notifications";
 
-// HR pages
+
 import HRDashboard      from "../pages/hr/Dashboard";
 import HRInternships    from "../pages/hr/Internships";
 import HRApplications   from "../pages/hr/Applications";
@@ -37,7 +37,7 @@ import HRReports        from "../pages/hr/Reports";
 import HRUsers          from "../pages/hr/Users";
 import HRSettings       from "../pages/hr/Settings";
 
-// Admin pages
+
 import AdminDashboard   from "../pages/admin/Dashboard";
 import AdminUsers       from "../pages/admin/Users";
 import AdminRoles       from "../pages/admin/Roles";
@@ -74,14 +74,14 @@ const PublicRoute = ({ children }) => {
 const AppRouter = () => (
   <BrowserRouter>
     <Routes>
-      {/* Public */}
+      {}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login"             element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register"          element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/forgot-password"   element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       <Route path="/reset-password"    element={<ResetPassword />} />
 
-      {/* Applicant */}
+      {}
       <Route path="/applicant" element={<ProtectedRoute allowedRoles={["applicant"]}><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard"      element={<ApplicantDashboard />} />
@@ -96,7 +96,7 @@ const AppRouter = () => (
         <Route path="notifications"  element={<Notifications />} />
       </Route>
 
-      {/* HR */}
+      {}
       <Route path="/hr" element={<ProtectedRoute allowedRoles={["hr"]}><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard"    element={<HRDashboard />} />
@@ -111,7 +111,7 @@ const AppRouter = () => (
         <Route path="settings"     element={<HRSettings />} />
       </Route>
 
-      {/* Admin */}
+      {}
       <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard"     element={<AdminDashboard />} />

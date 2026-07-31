@@ -1,4 +1,4 @@
-// src/utils/formatters.js
+
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 
 export const fDate = (d) => { try { return format(parseISO(d), "dd MMM yyyy"); } catch { return d; } };

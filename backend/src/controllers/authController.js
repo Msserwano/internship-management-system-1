@@ -1,4 +1,4 @@
-// backend/src/controllers/authController.js
+
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { getPool } = require("../config/database");
@@ -30,8 +30,8 @@ const registerUser = async (req, res) => {
   if (!/^\S+@\S+\.\S+$/.test(normalizedEmail) || String(password).length < 8) {
     return res.status(400).json({ success: false, message: "Provide a valid email address and a password of at least 8 characters." });
   }
-  // Public registration can only create applicants. HR and administrator
-  // accounts are provisioned through the administrator-only users endpoint.
+
+
   const assignedRole = "applicant";
 
   const client = await pool.connect();
@@ -68,7 +68,7 @@ const registerUser = async (req, res) => {
   }
 };
 
-// Email verification endpoints removed — verification is handled automatically via SKIP_EMAIL_VERIFICATION
+
 
 const loginUser = async (req, res) => {
   try {

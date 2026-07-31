@@ -1,20 +1,15 @@
-// backend/src/config/database.js
-/**
- * PostgreSQL Database Configuration
- * Manages connection pooling and database initialization
- */
+
+
 const { Pool } = require("pg");
 const logger = require("./logger");
 const bcrypt = require("bcryptjs");
 
 let pool = null;
 
-/**
- * Initialize database connection pool
- */
+
 const initializePool = () => {
   if (pool) return pool;
-  // Prefer DATABASE_URL when available (e.g., Heroku/CI). Fall back to individual env vars.
+
   if (process.env.DATABASE_URL) {
     const config = {
       connectionString: process.env.DATABASE_URL,
@@ -62,15 +57,13 @@ const initializePool = () => {
   return pool;
 };
 
-/**
- * Get database connection
- */
+
 const getPool = () => {
   if (!pool) {
     try {
       initializePool();
     } catch (err) {
-      // If initialization fails, log and rethrow so callers can behave accordingly
+
       logger.error("Failed to initialize DB pool", { error: err.message });
       throw err;
     }
@@ -78,9 +71,7 @@ const getPool = () => {
   return pool;
 };
 
-/**
- * Test database connection
- */
+
 const testConnection = async () => {
   try {
     const p = initializePool();
@@ -98,16 +89,14 @@ const testConnection = async () => {
   }
 };
 
-/**
- * Initialize database schema
- */
+
 const initializeSchema = async () => {
   const client = await getPool().connect();
 
   try {
     await client.query("BEGIN");
 
-    // Users table
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id VARCHAR(50) PRIMARY KEY,
@@ -129,7 +118,7 @@ const initializeSchema = async () => {
       )
     `);
 
-    // Internships table
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS internships (
         id VARCHAR(50) PRIMARY KEY,
@@ -149,7 +138,7 @@ const initializeSchema = async () => {
       )
     `);
 
-    // Applications table
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS applications (
         id VARCHAR(50) PRIMARY KEY,
@@ -165,7 +154,7 @@ const initializeSchema = async () => {
       )
     `);
 
-    // Interviews table
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS interviews (
         id VARCHAR(50) PRIMARY KEY,
@@ -180,7 +169,7 @@ const initializeSchema = async () => {
       )
     `);
 
-    // Audit logs table
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS audit_logs (
         id SERIAL PRIMARY KEY,
@@ -196,7 +185,7 @@ const initializeSchema = async () => {
       )
     `);
 
-    // Create indexes
+
     await client.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_applications_applicant ON applications(applicant_id)`);
@@ -215,9 +204,7 @@ const initializeSchema = async () => {
   }
 };
 
-/**
- * Seed demo users
- */
+
 const seedDemoUsers = async () => {
   const client = await getPool().connect();
 
@@ -291,7 +278,7 @@ const seedDemoUsers = async () => {
       );
     }
 
-    // Seed Internships
+
     const demoInternships = [
       { id: "INT001", title: "Software Development Intern", department: "ICT", description: "Develop internal software systems and web portals for KCCA.", vacancies: 4, deadline: "2026-08-15", supervisor: "Mr. Peter Mwesigwa", duration: "3 Months", location: "City Hall – Kampala", status: "open" },
       { id: "INT002", title: "Public Health Intern", department: "Public Health Services", description: "Community health outreach programs and data collection.", vacancies: 6, deadline: "2026-08-20", supervisor: "Dr. Aisha Namazzi", duration: "6 Months", location: "Kawempe Division", status: "open" },
@@ -308,7 +295,7 @@ const seedDemoUsers = async () => {
       );
     }
 
-    // Seed Submitted Applications to HR
+
     const demoApplications = [
       { id: "APP001", internship_id: "INT001", applicant_id: "U001", university: "Makerere University", course: "Computer Science", gpa: 4.5, status: "shortlisted", review_note: "Exceptional academic background and strong coding skills.", assigned_hr_id: "U002", submitted_at: "2026-07-10T09:30:00Z" },
       { id: "APP002", internship_id: "INT004", applicant_id: "U005", university: "Uganda Christian University", course: "Accounting & Finance", gpa: 4.2, status: "under_review", review_note: "Documents verified. Pending HR department manager endorsement.", assigned_hr_id: "U002", submitted_at: "2026-07-15T11:00:00Z" },
@@ -335,9 +322,7 @@ const seedDemoUsers = async () => {
   }
 };
 
-/**
- * Close database connection
- */
+
 const closePool = async () => {
   if (pool) {
     await pool.end();

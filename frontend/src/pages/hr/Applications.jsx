@@ -1,4 +1,4 @@
-// src/pages/hr/Applications.jsx
+
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
@@ -26,7 +26,7 @@ const HRApplications = () => {
   const [selectedApp, setSelectedApp] = useState(null);
   const [reviewNote, setReviewNote]   = useState("");
 
-  // Filters
+
   const [search, setSearch]           = useState("");
   const [deptFilter, setDeptFilter]   = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -125,7 +125,7 @@ const HRApplications = () => {
         </div>
       </div>
 
-      {/* Advanced Filters */}
+      {}
       <div className="card p-5 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <Input
@@ -160,7 +160,7 @@ const HRApplications = () => {
           />
         </div>
 
-        {/* Bulk Action Toolbar */}
+        {}
         {selectedIds.length > 0 && (
           <div className="p-3 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-between">
             <span className="text-xs font-semibold text-primary-700 dark:text-primary-300">
@@ -181,7 +181,7 @@ const HRApplications = () => {
         )}
       </div>
 
-      {/* Applications Data Table */}
+      {}
       <div className="card p-6">
         <div className="overflow-x-auto">
           <table className="data-table">
@@ -241,7 +241,7 @@ const HRApplications = () => {
         </div>
       </div>
 
-      {/* Review Modal */}
+      {}
       {selectedApp && (
         <Modal open={!!selectedApp} onClose={() => setSelectedApp(null)} title={`Review Application: ${selectedApp.applicantName}`} size="lg">
           <div className="p-6 space-y-6">
@@ -274,7 +274,7 @@ const HRApplications = () => {
             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
               <Button variant="ghost" size="sm" onClick={() => setSelectedApp(null)}>Close</Button>
               <div className="flex gap-2">
-                <Button variant="danger" size="sm" onClick={() => handleUpdateSingle(selectedApp.id, "rejected")}> 
+                <Button variant="danger" size="sm" onClick={() => handleUpdateSingle(selectedApp.id, "rejected")}>
                   Reject Application
                 </Button>
                 <Button variant="accent" size="sm" onClick={() => handleUpdateSingle(selectedApp.id, "shortlisted")}>

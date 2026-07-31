@@ -1,4 +1,4 @@
-// src/pages/applicant/ApplyWizard.jsx
+
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,9 +39,9 @@ const ApplyWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form State
+
   const [formData, setFormData] = useState({
-    // Step 1: Personal
+
     fullName: user?.name || "Sarah Nakimuli",
     email: user?.email || "applicant@kcca.go.ug",
     phone: user?.phone || "+256 701 234 567",
@@ -50,19 +50,19 @@ const ApplyWizard = () => {
     district: user?.district || "Kampala",
     nin: "CM010203040506",
 
-    // Step 2: Academic
+
     qualification: "Bachelor's Degree",
     course: user?.course || "Computer Science",
     yearOfStudy: user?.yearOfStudy || "3rd Year",
     gpa: user?.gpa || "4.2",
 
-    // Step 3: University
+
     university: user?.university || "Makerere University",
     studentId: user?.studentId || "16/U/0001/PS",
     headOfDept: "Dr. Florence Tushabe",
     universityEmail: "info@mak.ac.ug",
 
-    // Step 4: Documents
+
     nationalIdDoc: "national_id.pdf",
     recommendationDoc: "recommendation_letter.pdf",
     transcriptDoc: "academic_transcript.pdf",
@@ -113,7 +113,7 @@ const ApplyWizard = () => {
     <div className="page-container max-w-4xl mx-auto">
       <Breadcrumbs />
 
-      {/* Internship Banner */}
+      {}
       <div className="card p-6 bg-gradient-to-r from-primary-600 to-primary-800 text-white mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -132,7 +132,7 @@ const ApplyWizard = () => {
         </div>
       </div>
 
-      {/* Progress Stepper */}
+      {}
       <div className="card p-6 mb-8">
         <div className="flex items-center justify-between relative">
           {STEPS.map((step, idx) => {
@@ -178,7 +178,7 @@ const ApplyWizard = () => {
         </div>
       </div>
 
-      {/* Wizard Form Steps */}
+      {}
       <div className="card p-6 md:p-8">
         <AnimatePresence mode="wait">
           {currentStep === 1 && (
@@ -364,7 +364,7 @@ const ApplyWizard = () => {
                         <span className="badge badge-accepted text-[10px]">Uploaded</span>
                       )}
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <label className="btn btn-outline btn-xs cursor-pointer flex items-center gap-1">
                         <Upload className="w-3 h-3" /> Select File
@@ -434,7 +434,7 @@ const ApplyWizard = () => {
           )}
         </AnimatePresence>
 
-        {/* Wizard Controls */}
+        {}
         <div className="flex items-center justify-between pt-6 mt-6 border-t border-slate-100 dark:border-slate-700">
           {currentStep > 1 ? (
             <Button variant="ghost" size="md" onClick={handlePrev} icon={ArrowLeft}>

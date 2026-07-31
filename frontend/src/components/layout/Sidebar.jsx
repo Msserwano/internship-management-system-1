@@ -1,4 +1,4 @@
-// src/components/layout/Sidebar.jsx
+
 import { NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -60,7 +60,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {}
       <div className={cn("flex items-center gap-3 px-4 py-4 border-b border-white/10", collapsed && !mobileOpen && "justify-center px-2")}>
         <img src="/kcca-logo.png" alt="KCCA Logo" className="w-9 h-9 object-contain bg-white rounded-xl p-0.5 shadow-sm flex-shrink-0" />
         {(!collapsed || mobileOpen) && (
@@ -76,7 +76,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
         )}
       </div>
 
-      {/* User info */}
+      {}
       {(!collapsed || mobileOpen) && (
         <div className="px-4 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -89,7 +89,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
         </div>
       )}
 
-      {/* Nav */}
+      {}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {nav.map((item) => (
           <NavLink
@@ -115,7 +115,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
         ))}
       </nav>
 
-      {/* Bottom actions */}
+      {}
       <div className={cn("px-3 py-4 border-t border-white/10 space-y-1", collapsed && !mobileOpen && "px-2")}>
         <button
           onClick={toggle}
@@ -137,14 +137,14 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
 
   return (
     <>
-      {/* Desktop sidebar */}
+      {}
       <motion.aside
         animate={{ width: collapsed ? 72 : 260 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="hidden md:flex flex-col h-screen bg-gradient-to-b from-primary-700 to-primary-900 fixed left-0 top-0 z-30 shadow-xl overflow-hidden"
       >
         <SidebarContent />
-        {/* Collapse toggle */}
+        {}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute top-5 -right-3 w-6 h-6 bg-white dark:bg-slate-700 rounded-full shadow-md flex items-center justify-center border border-slate-200 dark:border-slate-600 hover:bg-slate-50"
@@ -153,7 +153,7 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
         </button>
       </motion.aside>
 
-      {/* Mobile sidebar */}
+      {}
       <AnimatePresence>
         {mobileOpen && (
           <>

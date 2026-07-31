@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// Allowed tables for generic CRUD
+
 const ALLOWED_TABLES = ['users', 'internships', 'applications', 'interviews', 'notifications'];
 
 const ensureTable = (table) => {
@@ -71,11 +71,11 @@ const remove = async (req, res) => {
     ensureTable(table);
     const actor = req.user ? { id: req.user.id, role: req.user.role } : null;
     const reason = req.body && req.body.reason ? req.body.reason : req.query && req.query.reason ? req.query.reason : null;
-    // Admins can request a hard delete with ?hard=true
+
     const hardRequested = req.query && (req.query.hard === 'true' || req.query.hard === '1');
     const isAdmin = actor && String(actor.role).toLowerCase() === 'admin';
     const opts = { soft: !(isAdmin && hardRequested), actor, reason };
-    // Perform delete (soft by default, hard if admin requested)
+
     const ok = await db.delete(table, id, opts);
     if (!ok) return res.status(404).json({ success: false, message: `${table.slice(0,-1)} not found` });
     return res.json({ success: true, message: `${table.slice(0,-1)} deleted`, id });

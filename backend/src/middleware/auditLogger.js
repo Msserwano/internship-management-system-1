@@ -3,11 +3,7 @@ const logger = require("../config/logger");
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-/**
- * Records successful authenticated writes without placing audit concerns in
- * every controller. Audit failures are intentionally non-blocking: a healthy
- * business request must not fail because its audit sink is temporarily down.
- */
+
 const auditLogger = (req, res, next) => {
   res.on("finish", () => {
     if (!MUTATING_METHODS.has(req.method) || !req.user || res.statusCode >= 400) return;

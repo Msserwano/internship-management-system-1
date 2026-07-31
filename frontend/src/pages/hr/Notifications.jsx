@@ -17,7 +17,7 @@ const HRNotifications = () => {
         {!loading && notifications.length === 0 && <p className="text-sm text-slate-500">No notifications.</p>}
         <div className="divide-y divide-slate-100">
           {notifications.map(n => (
-            <div key={n.id} className={`p-3 ${!n.isRead ? 'bg-primary-50/30' : ''}`}> 
+            <div key={n.id} className={`p-3 ${!n.isRead ? 'bg-primary-50/30' : ''}`}>
               <div className="flex justify-between items-start">
                 <div className="flex items-start gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${n.type === 'application_assigned' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>{n.type === 'application_assigned' ? 'A' : 'N'}</div>

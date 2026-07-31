@@ -1,4 +1,4 @@
-// src/components/ui/ConfirmDialog.jsx
+
 import Modal from "./Modal";
 import Button from "./Button";
 import { AlertTriangle } from "lucide-react";

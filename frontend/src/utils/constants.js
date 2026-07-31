@@ -1,4 +1,4 @@
-// src/utils/constants.js
+
 export const APP_NAME = "KCCA Internship Portal";
 export const APP_SHORT = "KCCA IMS";
 export const ORG_NAME = "Kampala Capital City Authority";

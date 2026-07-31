@@ -1,4 +1,4 @@
-// src/pages/admin/Notifications.jsx
+
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
@@ -29,7 +29,7 @@ const AdminNotifications = () => {
 
         <form onSubmit={handleBroadcast} className="space-y-4">
           <Input label="Notification Title" required placeholder="e.g. KCCA Internship Deadline Extended" />
-          
+
           <div>
             <label className="form-label">Message Content</label>
             <textarea

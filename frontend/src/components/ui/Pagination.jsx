@@ -1,4 +1,4 @@
-// src/components/ui/Pagination.jsx
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../../utils/cn";
 

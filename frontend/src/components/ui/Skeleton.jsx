@@ -1,4 +1,4 @@
-// src/components/ui/Skeleton.jsx
+
 import { cn } from "../../utils/cn";
 
 export const Skeleton = ({ className }) => <div className={cn("skeleton", className)} />;

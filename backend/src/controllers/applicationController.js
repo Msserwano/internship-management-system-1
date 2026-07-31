@@ -1,4 +1,4 @@
-// backend/src/controllers/applicationController.js
+
 const { getPool } = require("../config/database");
 const { sendNotificationEmail } = require("../config/mailer");
 const pool = getPool();
@@ -26,16 +26,14 @@ const applicationSelect = `
   LEFT JOIN users u ON u.id = a.applicant_id
   LEFT JOIN users ur ON ur.id = a.assigned_hr_id`;
 
-/**
- * Retrieve applications (with applicantId, internshipId, status filters)
- */
+
 const getAllApplications = async (req, res) => {
   try {
     const { applicantId, internshipId, status } = req.query;
     const clauses = [];
     const params = [];
     let idx = 1;
-    // Applicants never choose the applicant ID filter; it is derived from their JWT.
+
     const effectiveApplicantId = isStaff(req.user) ? applicantId : req.user.id;
     if (effectiveApplicantId) { clauses.push(`a.applicant_id = $${idx}`); params.push(effectiveApplicantId); idx++; }
     if (internshipId) { clauses.push(`a.internship_id = $${idx}`); params.push(internshipId); idx++; }
@@ -50,9 +48,7 @@ const getAllApplications = async (req, res) => {
   }
 };
 
-/**
- * Retrieve single application by ID
- */
+
 const getApplicationById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -69,9 +65,7 @@ const getApplicationById = async (req, res) => {
   }
 };
 
-/**
- * Store / Write a new application (Create)
- */
+
 const submitApplication = async (req, res) => {
   try {
     const { internshipId, university, course, gpa } = req.body;
@@ -106,7 +100,7 @@ const submitApplication = async (req, res) => {
 
       await client.query('COMMIT');
 
-      // Notify HR users about the new application (non-blocking)
+
       (async () => {
         try {
           const hrRes = await pool.query("SELECT id, email, name FROM users WHERE LOWER(role) = 'hr' AND (status IS NULL OR LOWER(status) = 'active')");
@@ -125,7 +119,7 @@ const submitApplication = async (req, res) => {
               <p><strong>GPA:</strong> ${app.gpa || 'N/A'}</p>
               ${viewLink ? `<p><a href="${viewLink}">View application</a></p>` : ''}
             `;
-            // Insert notification records and send emails (non-blocking)
+
             const notifyPromises = hrRes.rows.map(async (h) => {
               try {
                 await pool.query(
@@ -161,9 +155,7 @@ const submitApplication = async (req, res) => {
   }
 };
 
-/**
- * Edit / Modify application status or review notes (Update)
- */
+
 const updateApplication = async (req, res) => {
   try {
     const { id } = req.params;
@@ -185,7 +177,7 @@ const updateApplication = async (req, res) => {
       }
 
       const updates = { ...req.body, timeline };
-      // Build update query
+
       const allowed = ['status','review_note','timeline'];
       const sets = [];
       const params = [];
@@ -213,9 +205,7 @@ const updateApplication = async (req, res) => {
   }
 };
 
-/**
- * Delete application
- */
+
 const deleteApplication = async (req, res) => {
   try {
     const { id } = req.params;
@@ -228,9 +218,7 @@ const deleteApplication = async (req, res) => {
   }
 };
 
-/**
- * Assign an application to a specific HR user (requires HR/Admin)
- */
+
 const assignApplication = async (req, res) => {
   try {
     const { id } = req.params;
@@ -254,12 +242,12 @@ const assignApplication = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Provided hrId is not a valid HR user.' });
       }
 
-      // update assigned_hr_id and timeline
+
       const timeline = (application.timeline || []).concat([{ status: 'assigned', date: new Date().toISOString(), note: `Assigned to HR ${hrUser.name || hrUser.id}` }]);
       const q = `UPDATE applications SET assigned_hr_id = $1, timeline = $2, updated_at = NOW() WHERE id = $3 RETURNING *`;
       const updated = await client.query(q, [hrId, JSON.stringify(timeline), id]);
 
-      // create notification for the HR user
+
       await client.query(
         `INSERT INTO notifications (user_id, type, payload, is_read, created_at) VALUES ($1,$2,$3,false,NOW())`,
         [hrId, 'application_assigned', JSON.stringify({ applicationId: id, internshipId: application.internship_id, applicantId: application.applicant_id })]
@@ -267,7 +255,7 @@ const assignApplication = async (req, res) => {
 
       await client.query('COMMIT');
 
-      // Send email notification (non-blocking)
+
       (async () => {
         try {
           const subject = `Application ${id} assigned to you`;

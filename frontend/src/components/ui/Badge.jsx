@@ -1,4 +1,4 @@
-// src/components/ui/Badge.jsx
+
 import { cn } from "../../utils/cn";
 import { STATUS_LABELS } from "../../utils/constants";
 
