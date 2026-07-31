@@ -117,6 +117,22 @@
   ],
   "internships": [
     {
+      "id": "INT1785501960711",
+      "createdAt": "2026-07-31T12:46:00.711Z",
+      "title": "Test Intern Role",
+      "department": "ICT",
+      "description": "This is a test description long enough to pass validation.",
+      "vacancies": 1,
+      "deadline": "2026-08-07T12:46:00.443Z",
+      "deleted": true,
+      "deletedAt": "2026-07-31T12:46:00.901Z",
+      "deletedBy": {
+        "id": "U003",
+        "role": "admin"
+      },
+      "deleteReason": "No longer needed"
+    },
+    {
       "id": "INT1785501516123",
       "createdAt": "2026-07-31T12:38:36.123Z",
       "title": "Test Intern Role",
@@ -295,6 +311,200 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "U888",
+      "timestamp": "2026-07-31T12:46:02.786Z",
+      "action": "ndjson-test",
+      "table": "users",
+      "actor": {
+        "id": "U003",
+        "role": "admin"
+      },
+      "reason": "ndjson test"
+    },
+    {
+      "id": "INT1785501960711",
+      "timestamp": "2026-07-31T12:46:00.905Z",
+      "action": "soft-delete",
+      "table": "internships",
+      "actor": {
+        "id": "U003",
+        "role": "admin"
+      },
+      "reason": "No longer needed"
+    },
+    {
+      "id": "INT1785501897373",
+      "timestamp": "2026-07-31T12:44:58.331Z",
+      "action": "purge",
+      "table": "internships",
+      "removed": {
+        "id": "INT1785501897373",
+        "createdAt": "2026-07-31T12:44:57.373Z",
+        "title": "Test Intern Role",
+        "department": "ICT",
+        "description": "This is a test description long enough to pass validation.",
+        "vacancies": 1,
+        "deadline": "2026-08-07T12:44:57.037Z",
+        "deleted": true,
+        "deletedAt": "2026-07-31T12:44:57.600Z",
+        "deletedBy": {
+          "id": "U003",
+          "role": "admin"
+        },
+        "deleteReason": "No longer needed"
+      }
+    },
+    {
+      "id": "INT1785501898223",
+      "timestamp": "2026-07-31T12:44:58.326Z",
+      "action": "purge",
+      "table": "internships",
+      "removed": {
+        "id": "INT1785501898223",
+        "createdAt": "2026-07-31T12:44:58.223Z",
+        "title": "Purge Role",
+        "department": "ICT",
+        "description": "This is yet another test description long enough to pass validation.",
+        "vacancies": 1,
+        "deadline": "2026-08-07T12:44:58.199Z",
+        "deleted": true,
+        "deletedAt": "2026-07-31T12:44:58.264Z",
+        "deletedBy": {
+          "id": "U003",
+          "role": "admin"
+        },
+        "deleteReason": null
+      }
+    },
+    {
+      "id": "INT1785501898223",
+      "timestamp": "2026-07-31T12:44:58.266Z",
+      "action": "soft-delete",
+      "table": "internships",
+      "actor": {
+        "id": "U003",
+        "role": "admin"
+      },
+      "reason": null
+    },
+    {
+      "id": "INT1785501898012",
+      "timestamp": "2026-07-31T12:44:58.069Z",
+      "action": "delete",
+      "table": "internships",
+      "actor": {
+        "id": "U003",
+        "role": "admin"
+      },
+      "reason": "Purge",
+      "removed": {
+        "id": "INT1785501898012",
+        "createdAt": "2026-07-31T12:44:58.012Z",
+        "title": "Hard Delete Role",
+        "department": "ICT",
+        "description": "This is another test description long enough to pass validation.",
+        "vacancies": 1,
+        "deadline": "2026-08-07T12:44:57.958Z"
+      }
+    },
+    {
+      "id": "INT1785501897373",
+      "timestamp": "2026-07-31T12:44:57.603Z",
+      "action": "soft-delete",
+      "table": "internships",
+      "actor": {
+        "id": "U003",
+        "role": "admin"
+      },
+      "reason": "No longer needed"
+    },
+    {
+      "id": "INT1785501814671",
+      "timestamp": "2026-07-31T12:43:36.183Z",
+      "action": "purge",
+      "table": "internships",
+      "removed": {
+        "id": "INT1785501814671",
+        "createdAt": "2026-07-31T12:43:34.671Z",
+        "title": "Test Intern Role",
+        "department": "ICT",
+        "description": "This is a test description long enough to pass validation.",
+        "vacancies": 1,
+        "deadline": "2026-08-07T12:43:34.127Z",
+        "deleted": true,
+        "deletedAt": "2026-07-31T12:43:34.885Z",
+        "deletedBy": {
+          "id": "U003",
+          "role": "admin"
+        },
+        "deleteReason": "No longer needed"
+      }
+    },
+    {
+      "id": "INT1785501815986",
+      "timestamp": "2026-07-31T12:43:36.181Z",
+      "action": "purge",
+      "table": "internships",
+      "removed": {
+        "id": "INT1785501815986",
+        "createdAt": "2026-07-31T12:43:35.986Z",
+        "title": "Purge Role",
+        "department": "ICT",
+        "description": "This is yet another test description long enough to pass validation.",
+        "vacancies": 1,
+        "deadline": "2026-08-07T12:43:35.913Z",
+        "deleted": true,
+        "deletedAt": "2026-07-31T12:43:36.097Z",
+        "deletedBy": {
+          "id": "U003",
+          "role": "admin"
+        },
+        "deleteReason": null
+      }
+    },
+    {
+      "id": "INT1785501815986",
+      "timestamp": "2026-07-31T12:43:36.111Z",
+      "action": "soft-delete",
+      "table": "internships",
+      "actor": {
+        "id": "U003",
+        "role": "admin"
+      },
+      "reason": null
+    },
+    {
+      "id": "INT1785501815597",
+      "timestamp": "2026-07-31T12:43:35.686Z",
+      "action": "delete",
+      "table": "internships",
+      "actor": {
+        "id": "U003",
+        "role": "admin"
+      },
+      "reason": "Purge",
+      "removed": {
+        "id": "INT1785501815597",
+        "createdAt": "2026-07-31T12:43:35.597Z",
+        "title": "Hard Delete Role",
+        "department": "ICT",
+        "description": "This is another test description long enough to pass validation.",
+        "vacancies": 1,
+        "deadline": "2026-08-07T12:43:35.555Z"
+      }
+    },
+    {
+      "id": "INT1785501814671",
+      "timestamp": "2026-07-31T12:43:34.888Z",
+      "action": "soft-delete",
+      "table": "internships",
+      "actor": {
+        "id": "U003",
+        "role": "admin"
+      },
+      "reason": "No longer needed"
+    },
     {
       "id": "U999",
       "timestamp": "2026-07-31T12:38:38.041Z",
