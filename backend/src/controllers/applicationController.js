@@ -17,14 +17,15 @@ const applicationSelect = `
     a.review_note     AS "reviewNote",
     a.assigned_hr_id  AS "assignedHrId",
     i.title           AS "internshipTitle",
-    i.department      AS department,
-    u.name            AS "applicantName",
-    u.gender          AS gender,
+    COALESCE(i.department, 'General') AS department,
+    COALESCE(u.name, app.full_name, 'Applicant') AS "applicantName",
+    COALESCE(u.email, app.email) AS "applicantEmail",
     ur.name           AS "assignedHrName"
   FROM applications a
-  JOIN internships i  ON i.id  = a.internship_id
-  LEFT JOIN users u   ON u.id  = a.applicant_id
-  LEFT JOIN users ur  ON ur.id = a.assigned_hr_id`;
+  LEFT JOIN internships i  ON i.id  = a.internship_id
+  LEFT JOIN users u        ON u.id  = a.applicant_id
+  LEFT JOIN applicants app ON app.applicant_id::text = a.applicant_id
+  LEFT JOIN users ur       ON ur.id = a.assigned_hr_id`;
 
 // ---------------------------------------------------------------------------
 // GET /api/applications
