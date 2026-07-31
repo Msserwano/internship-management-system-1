@@ -34,7 +34,7 @@ VALUES (
   'Admin',
   'User',
   'admin@kcca.go.ug',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh.a',
+  '$2a$10$y7CMBuOZEqKWO2oXnhBTq.xWcwxxaS41rSImCuxukVtbjXvI9nKza',
   'admin',
   '+256 700 000 001',
   'active',
@@ -54,7 +54,7 @@ VALUES (
   'Sarah',
   'Namukasa',
   'hr@kcca.go.ug',
-  '$2a$10$YUiVKhSB4VEoTBf3eGRSEuiJSE.eIBu0k9kPE4BQVeOgm8z.JMxo6',
+  '$2a$10$CiYynE2Z7mU9ht2nzQRh3O/AvvmePt3LpbhmyUdVf2av.mDZor67O',
   'hr',
   '+256 700 000 002',
   'HR Officer',
@@ -76,7 +76,7 @@ VALUES (
   'James',
   'Okello',
   'hrmanager@kcca.go.ug',
-  '$2a$10$YUiVKhSB4VEoTBf3eGRSEuiJSE.eIBu0k9kPE4BQVeOgm8z.JMxo6',
+  '$2a$10$CiYynE2Z7mU9ht2nzQRh3O/AvvmePt3LpbhmyUdVf2av.mDZor67O',
   'hr',
   '+256 700 000 003',
   'Recruitment Manager',
@@ -98,7 +98,7 @@ VALUES (
   'Patricia',
   'Akello',
   'supervisor@kcca.go.ug',
-  '$2a$10$8q4R9KwX2YZzL3M0NpPvOeGf7cHnJkBdFmCeRtSuVwYxQiAsDeWlU.',
+  '$2a$10$rVhogC1mGJz70wAT81w3EeOk3mT/9NL2rZ6zwRxIJQSSYEhaMrIAW',
   'hr',
   '+256 700 000 004',
   'Department Supervisor',
@@ -247,13 +247,14 @@ INSERT INTO applicants (full_name, email, password_hash, phone_number, instituti
 VALUES (
   'John Sserwano',
   'applicant@test.com',
-  '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+  '$2a$10$jpBFnU7.naqEIClbqbNNmufulIDhdlovXtfVmWhKt7.SnEo5oZCKi',
   '+256 781 234 567',
   'Makerere University',
   'Bachelor of Science in Computer Science',
   'Year 3'
 )
-ON CONFLICT (email) DO NOTHING;
+ON CONFLICT (email) DO UPDATE SET
+  password_hash = EXCLUDED.password_hash;
 
 -- =============================================================================
 -- LOGIN CREDENTIALS SUMMARY:
