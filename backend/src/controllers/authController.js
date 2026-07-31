@@ -1,25 +1,12 @@
-
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { getPool } = require("../config/database");
 
 const JWT_SECRET  = process.env.JWT_SECRET || "development-only-secret";
 const JWT_EXPIRES = "7d";
 
-// Safe representation of a user row to send in JWT payload / responses
-const safeUserRow = (u) => ({
-  id:         u.id,
-  name:       u.name,
-  firstName:  u.first_name  || null,
-  lastName:   u.last_name   || null,
-  email:      u.email,
-  phone:      u.phone,
-  role:       u.role,
-  isVerified: u.is_verified,
-  createdAt:  u.created_at,
-});
-
 // ---------------------------------------------------------------------------
-// POST /api/auth/register
+// POST /api/auth/register (Applicant Registration)
 // ---------------------------------------------------------------------------
 const registerUser = async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
@@ -36,32 +23,22 @@ const registerUser = async (req, res) => {
     });
   }
 
-  // Pool is fetched lazily here — no module-load crash risk
-  const { getPool } = require("../config/database");
   const client = await getPool().connect();
   try {
-    const existing = (await client.query("SELECT * FROM users WHERE email = $1", [normalizedEmail])).rows[0];
-
-    if (existing && existing.is_verified) {
+    // Check if applicant already exists
+    const existing = (await client.query("SELECT applicant_id FROM applicants WHERE LOWER(email) = $1", [normalizedEmail])).rows[0];
+    if (existing) {
       return res.status(409).json({ success: false, message: "An account with this email already exists. Please log in." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const name = `${firstName.trim()} ${lastName.trim()}`;
-    const id   = existing ? existing.id : `U${String(Date.now()).slice(-6)}`;
+    const fullName = `${firstName.trim()} ${lastName.trim()}`;
 
-    if (existing) {
-      await client.query(
-        `UPDATE users SET name=$1, first_name=$2, last_name=$3, password_hash=$4, role=$5, phone=$6, is_verified=true, updated_at=NOW() WHERE email=$7`,
-        [name, firstName.trim(), lastName.trim(), passwordHash, "applicant", phone || null, normalizedEmail]
-      );
-    } else {
-      await client.query(
-        `INSERT INTO users (id, name, first_name, last_name, email, password_hash, role, phone, is_verified)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [id, name, firstName.trim(), lastName.trim(), normalizedEmail, passwordHash, "applicant", phone || null, true]
-      );
-    }
+    await client.query(
+      `INSERT INTO applicants (full_name, email, password_hash, phone_number)
+       VALUES ($1, $2, $3, $4)`,
+      [fullName, normalizedEmail, passwordHash, phone || null]
+    );
 
     return res.status(201).json({
       success: true,
@@ -77,7 +54,7 @@ const registerUser = async (req, res) => {
 };
 
 // ---------------------------------------------------------------------------
-// POST /api/auth/login
+// POST /api/auth/login (Staff & Applicants Login)
 // ---------------------------------------------------------------------------
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -86,27 +63,27 @@ const loginUser = async (req, res) => {
   }
 
   const normalizedEmail = String(email).trim().toLowerCase();
-
-  const { getPool } = require("../config/database");
   const client = await getPool().connect();
+
   try {
-    const user = (await client.query("SELECT * FROM users WHERE email = $1", [normalizedEmail])).rows[0];
+    // 1. Check staff_users table
+    let staffRes = await client.query("SELECT * FROM staff_users WHERE LOWER(email) = $1", [normalizedEmail]);
+    let user = staffRes.rows[0];
+    let isStaff = true;
+
+    // 2. If not found in staff_users, check applicants table
+    if (!user) {
+      let applicantRes = await client.query("SELECT * FROM applicants WHERE LOWER(email) = $1", [normalizedEmail]);
+      user = applicantRes.rows[0];
+      isStaff = false;
+    }
 
     if (!user) {
       return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
 
-    if (!user.is_verified) {
-      return res.status(403).json({
-        success: false,
-        message: "Your email address is not yet verified. Please contact the administrator.",
-        code: "EMAIL_NOT_VERIFIED",
-        email: normalizedEmail,
-      });
-    }
-
-    if (user.status && user.status !== "active") {
-      return res.status(403).json({ success: false, message: "Your account has been suspended. Contact the administrator." });
+    if (isStaff && user.is_active === false) {
+      return res.status(403).json({ success: false, message: "Your account is deactivated. Contact administrator." });
     }
 
     const passwordMatch = user.password_hash
@@ -117,10 +94,32 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
 
-    const payload = { id: user.id, name: user.name, email: user.email, role: user.role };
-    const token   = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+    // Role mapping for staff vs applicants
+    const userRole = isStaff ? (user.role || "admin") : "applicant";
+    // Normalize role for frontend routing (e.g. director_hr / hr_officer -> hr)
+    let frontendRole = "applicant";
+    if (["admin"].includes(userRole)) frontendRole = "admin";
+    else if (["director_hr", "manager_recruitment", "hr_officer", "pca_officer"].includes(userRole)) frontendRole = "hr";
+    else if (userRole === "department_supervisor") frontendRole = "hr";
 
-    return res.status(200).json({ success: true, message: "Login successful.", token, user: payload });
+    const userId = isStaff ? user.user_id : user.applicant_id;
+
+    const payload = {
+      id: userId,
+      name: user.full_name,
+      email: user.email,
+      role: frontendRole,
+      rawRole: userRole,
+    };
+
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful.",
+      token,
+      user: payload,
+    });
   } catch (err) {
     console.error("[AUTH] Login failed:", err.message);
     return res.status(500).json({ success: false, message: "Internal server error during login." });
