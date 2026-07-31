@@ -37,7 +37,7 @@ const ApplicantDashboard = () => {
       >
         <div className="relative z-10 max-w-3xl">
           <h1 className="text-3xl font-extrabold mb-2">
-            Good morning, {user?.name?.split(" ")[0] || "Applicant"}!
+            Welcome back, {user?.name?.split(" ")[0] || "Applicant"}!
           </h1>
           <p className="text-primary-100 text-base mb-6 leading-relaxed">
             Explore open roles, track your applications, and keep your profile in great shape all from one place.

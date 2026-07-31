@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getAllApplicants, getApplicantById, updateApplicantProfile } = require('../controllers/applicantController');
+const { getAllApplicants, getApplicantProfile, updateApplicantProfile, getApplicantById } = require('../controllers/applicantController');
 const { requireAuth, requireRole } = require('../middleware/authJwt');
 
-// Applicant updates their own profile (any authenticated user who is an applicant)
+// Applicant views or updates their own profile
+router.get('/profile', requireAuth, getApplicantProfile);
 router.put('/profile', requireAuth, updateApplicantProfile);
 
 // HR and Admin can view all applicants

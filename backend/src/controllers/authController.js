@@ -143,6 +143,19 @@ const loginUser = async (req, res) => {
       email: user.email,
       role: frontendRole,
       rawRole,
+      phone: user.phone_number || user.phone || "",
+      university: user.institution || "",
+      course: user.course_of_study || user.course || "",
+      yearOfStudy: user.academic_year_level || "",
+      gender: user.gender || "",
+      dob: user.date_of_birth || "",
+      district: user.district || "",
+      address: user.address || "",
+      nationality: user.nationality || "Ugandan",
+      gpa: user.gpa || "",
+      skills: user.skills || [],
+      languages: user.languages || [],
+      emergencyContact: user.emergency_contact || null,
     };
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });

@@ -41,7 +41,6 @@ const ApplyWizard = () => {
 
 
   const [formData, setFormData] = useState({
-
     fullName: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
@@ -50,18 +49,15 @@ const ApplyWizard = () => {
     district: user?.district || "",
     nin: "",
 
-
     qualification: "Bachelor's Degree",
     course: user?.course || "",
     yearOfStudy: user?.yearOfStudy || "3rd Year",
     gpa: user?.gpa || "",
 
-
     university: user?.university || "",
     studentId: user?.studentId || "",
     headOfDept: "",
     universityEmail: "",
-
 
     nationalIdDoc: "",
     recommendationDoc: "",
@@ -70,6 +66,34 @@ const ApplyWizard = () => {
     coverLetterDoc: "",
     photoDoc: "",
   });
+
+  useEffect(() => {
+    let isMounted = true;
+    import("../../api/axios").then(({ default: api }) => {
+      api.get("/applicants/profile")
+        .then((res) => {
+          if (!isMounted) return;
+          const p = res.data?.data;
+          if (p) {
+            setFormData((prev) => ({
+              ...prev,
+              fullName: p.name || prev.fullName,
+              email: p.email || prev.email,
+              phone: p.phone || prev.phone,
+              gender: p.gender || prev.gender,
+              dob: p.dob ? p.dob.split("T")[0] : prev.dob,
+              district: p.district || prev.district,
+              university: p.university || prev.university,
+              course: p.course || prev.course,
+              yearOfStudy: p.yearOfStudy || prev.yearOfStudy,
+              gpa: p.gpa || prev.gpa,
+            }));
+          }
+        })
+        .catch(() => {});
+    });
+    return () => { isMounted = false; };
+  }, []);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

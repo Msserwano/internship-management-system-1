@@ -1,10 +1,27 @@
-
 const { getPool } = require('../config/database');
+
+// Helper to ensure all profile columns exist on applicants table
+const ensureApplicantColumns = async (pool) => {
+  const queries = [
+    "ALTER TABLE applicants ADD COLUMN IF NOT EXISTS gender VARCHAR(20)",
+    "ALTER TABLE applicants ADD COLUMN IF NOT EXISTS district VARCHAR(100)",
+    "ALTER TABLE applicants ADD COLUMN IF NOT EXISTS address VARCHAR(255)",
+    "ALTER TABLE applicants ADD COLUMN IF NOT EXISTS nationality VARCHAR(100) DEFAULT 'Ugandan'",
+    "ALTER TABLE applicants ADD COLUMN IF NOT EXISTS gpa VARCHAR(20)",
+    "ALTER TABLE applicants ADD COLUMN IF NOT EXISTS skills TEXT[]",
+    "ALTER TABLE applicants ADD COLUMN IF NOT EXISTS languages TEXT[]",
+    "ALTER TABLE applicants ADD COLUMN IF NOT EXISTS emergency_contact JSONB"
+  ];
+  for (const q of queries) {
+    try { await pool.query(q); } catch (e) { /* ignore if already exists */ }
+  }
+};
 
 // GET /api/applicants — HR/Admin can view all registered applicants
 const getAllApplicants = async (req, res) => {
   try {
     const pool = getPool();
+    await ensureApplicantColumns(pool);
     const { search } = req.query;
     let where = '';
     let params = [];
@@ -21,10 +38,18 @@ const getAllApplicants = async (req, res) => {
          email,
          phone_number  AS phone,
          national_id_number AS national_id,
-         date_of_birth,
+         date_of_birth AS dob,
+         gender,
+         district,
+         address,
+         nationality,
          institution,
          course_of_study AS course,
-         academic_year_level AS year_level,
+         academic_year_level AS year_of_study,
+         gpa,
+         skills,
+         languages,
+         emergency_contact,
          created_at
        FROM applicants
        ${where}
@@ -39,30 +64,133 @@ const getAllApplicants = async (req, res) => {
   }
 };
 
+// GET /api/applicants/profile — Get currently logged in applicant's profile
+const getApplicantProfile = async (req, res) => {
+  try {
+    const pool = getPool();
+    await ensureApplicantColumns(pool);
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: 'Authentication required.' });
+
+    const result = await pool.query(
+      `SELECT
+         applicant_id        AS id,
+         full_name           AS name,
+         email,
+         phone_number        AS phone,
+         gender,
+         date_of_birth       AS dob,
+         district,
+         address,
+         nationality,
+         institution         AS university,
+         course_of_study     AS course,
+         academic_year_level AS "yearOfStudy",
+         gpa,
+         skills,
+         languages,
+         emergency_contact   AS "emergencyContact",
+         created_at          AS "createdAt"
+       FROM applicants
+       WHERE applicant_id::text = $1 OR LOWER(email) = LOWER($2)`,
+      [userId, req.user?.email || '']
+    );
+
+    let profile = result.rows[0];
+    if (!profile) {
+      // Return default shape based on auth token payload if record not found
+      profile = {
+        id: userId,
+        name: req.user?.name || '',
+        email: req.user?.email || '',
+        phone: '',
+        gender: '',
+        dob: '',
+        district: '',
+        address: '',
+        nationality: 'Ugandan',
+        university: '',
+        course: '',
+        yearOfStudy: '',
+        gpa: '',
+        skills: [],
+        languages: [],
+        emergencyContact: null,
+      };
+    }
+
+    return res.status(200).json({ success: true, data: profile });
+  } catch (err) {
+    console.error('[APPLICANT CONTROLLER] getProfile failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve applicant profile.' });
+  }
+};
+
 // PUT /api/applicants/profile — Applicant updates their own profile
 const updateApplicantProfile = async (req, res) => {
   try {
     const pool = getPool();
+    await ensureApplicantColumns(pool);
     const applicantId = req.user?.id;
     if (!applicantId) return res.status(401).json({ success: false, message: 'Authentication required.' });
 
-    const { name, phone, institution, course, academic_year_level } = req.body;
+    const {
+      name, phone, gender, dob, district, address, nationality,
+      institution, university, course, academic_year_level, yearOfStudy,
+      gpa, skills, languages, emergencyContact
+    } = req.body;
+
+    const uniVal    = institution || university;
+    const yearVal   = academic_year_level || yearOfStudy;
+    const skillsArr = Array.isArray(skills) ? skills : (skills ? String(skills).split(',').map(s=>s.trim()) : null);
+    const langArr   = Array.isArray(languages) ? languages : (languages ? String(languages).split(',').map(l=>l.trim()) : null);
+    const emergencyJson = emergencyContact ? JSON.stringify(emergencyContact) : null;
 
     const sets = [];
     const params = [];
     let idx = 1;
 
-    if (name)                { sets.push(`full_name = $${idx}`);              params.push(name); idx++; }
-    if (phone)               { sets.push(`phone_number = $${idx}`);           params.push(phone); idx++; }
-    if (institution)         { sets.push(`institution = $${idx}`);             params.push(institution); idx++; }
-    if (course)              { sets.push(`course_of_study = $${idx}`);        params.push(course); idx++; }
-    if (academic_year_level) { sets.push(`academic_year_level = $${idx}`);    params.push(academic_year_level); idx++; }
+    if (name !== undefined)                  { sets.push(`full_name = $${idx}`);           params.push(name); idx++; }
+    if (phone !== undefined)                 { sets.push(`phone_number = $${idx}`);        params.push(phone); idx++; }
+    if (gender !== undefined)                { sets.push(`gender = $${idx}`);             params.push(gender); idx++; }
+    if (dob !== undefined)                   { sets.push(`date_of_birth = $${idx}`);      params.push(dob || null); idx++; }
+    if (district !== undefined)              { sets.push(`district = $${idx}`);           params.push(district); idx++; }
+    if (address !== undefined)               { sets.push(`address = $${idx}`);            params.push(address); idx++; }
+    if (nationality !== undefined)           { sets.push(`nationality = $${idx}`);        params.push(nationality); idx++; }
+    if (uniVal !== undefined)                { sets.push(`institution = $${idx}`);        params.push(uniVal); idx++; }
+    if (course !== undefined)                { sets.push(`course_of_study = $${idx}`);     params.push(course); idx++; }
+    if (yearVal !== undefined)               { sets.push(`academic_year_level = $${idx}`); params.push(yearVal); idx++; }
+    if (gpa !== undefined)                   { sets.push(`gpa = $${idx}`);                params.push(gpa); idx++; }
+    if (skillsArr !== null)                  { sets.push(`skills = $${idx}`);             params.push(skillsArr); idx++; }
+    if (langArr !== null)                    { sets.push(`languages = $${idx}`);          params.push(langArr); idx++; }
+    if (emergencyJson !== null)              { sets.push(`emergency_contact = $${idx}`);  params.push(emergencyJson); idx++; }
 
     if (sets.length === 0) return res.status(400).json({ success: false, message: 'No valid fields to update.' });
 
     params.push(applicantId);
+    params.push(req.user?.email || '');
+
     const result = await pool.query(
-      `UPDATE applicants SET ${sets.join(', ')} WHERE applicant_id::text = $${idx} RETURNING applicant_id AS id, full_name AS name, email, phone_number AS phone, institution, course_of_study AS course, academic_year_level AS year_level`,
+      `UPDATE applicants
+       SET ${sets.join(', ')}
+       WHERE applicant_id::text = $${idx} OR LOWER(email) = LOWER($${idx+1})
+       RETURNING
+         applicant_id AS id,
+         full_name AS name,
+         email,
+         phone_number AS phone,
+         gender,
+         date_of_birth AS dob,
+         district,
+         address,
+         nationality,
+         institution AS university,
+         course_of_study AS course,
+         academic_year_level AS "yearOfStudy",
+         gpa,
+         skills,
+         languages,
+         emergency_contact AS "emergencyContact"`,
       params
     );
 
@@ -74,10 +202,11 @@ const updateApplicantProfile = async (req, res) => {
   }
 };
 
-// GET /api/applicants/:id — Get single applicant with their applications
+// GET /api/applicants/:id — Get single applicant with their applications (HR/Admin)
 const getApplicantById = async (req, res) => {
   try {
     const pool = getPool();
+    await ensureApplicantColumns(pool);
     const { id } = req.params;
 
     const result = await pool.query(
@@ -87,10 +216,18 @@ const getApplicantById = async (req, res) => {
          email,
          phone_number  AS phone,
          national_id_number AS national_id,
-         date_of_birth,
-         institution,
+         date_of_birth AS dob,
+         gender,
+         district,
+         address,
+         nationality,
+         institution   AS university,
          course_of_study AS course,
-         academic_year_level AS year_level,
+         academic_year_level AS year_of_study,
+         gpa,
+         skills,
+         languages,
+         emergency_contact AS "emergencyContact",
          created_at
        FROM applicants
        WHERE applicant_id::text = $1 OR LOWER(email) = LOWER($1)`,
@@ -100,21 +237,22 @@ const getApplicantById = async (req, res) => {
     const applicant = result.rows[0];
     if (!applicant) return res.status(404).json({ success: false, message: 'Applicant not found.' });
 
-    // Fetch their applications
-    const appsResult = await pool.query(
-      `SELECT a.*, i.title AS "internshipTitle", i.department
+    // Fetch their submitted applications
+    const appsRes = await pool.query(
+      `SELECT a.id, a.status, a.submitted_at AS "submittedAt", i.title AS "internshipTitle", i.department
        FROM applications a
-       LEFT JOIN internships i ON i.id = a.internship_id
+       JOIN internships i ON i.id = a.internship_id
        WHERE a.applicant_id = $1
        ORDER BY a.submitted_at DESC`,
-      [id]
+      [applicant.id]
     );
 
-    return res.status(200).json({ success: true, data: { ...applicant, applications: appsResult.rows } });
+    applicant.applications = appsRes.rows;
+    return res.status(200).json({ success: true, data: applicant });
   } catch (err) {
     console.error('[APPLICANT CONTROLLER] getById failed:', err.message);
-    return res.status(500).json({ success: false, message: 'Failed to retrieve applicant.' });
+    return res.status(500).json({ success: false, message: 'Failed to retrieve applicant details.' });
   }
 };
 
-module.exports = { getAllApplicants, getApplicantById, updateApplicantProfile };
+module.exports = { getAllApplicants, getApplicantProfile, updateApplicantProfile, getApplicantById };
