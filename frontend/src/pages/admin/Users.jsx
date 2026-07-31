@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Button from "../../components/ui/Button";
@@ -11,6 +10,7 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import Skeleton from "../../components/ui/Skeleton";
 import useApi from "../../hooks/useApi";
 import { userService } from "../../api/services";
+import { fDate } from "../../utils/formatters";
 import { Search, Plus, Edit3, Trash2, Shield, UserCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -24,13 +24,14 @@ const AdminUsers = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    role: "applicant",
+    password: "",
+    role: "hr",
     status: "active",
   });
 
   const handleOpenCreate = () => {
     setEditUser(null);
-    setFormData({ name: "", email: "", role: "applicant", status: "active" });
+    setFormData({ name: "", email: "", password: "", role: "hr", status: "active" });
     setModalOpen(true);
   };
 
@@ -46,10 +47,14 @@ const AdminUsers = () => {
 
     try {
       if (editUser) {
-        await userService.update(editUser.id, formData);
+        await userService.update(editUser.id, { name: formData.name, role: formData.role, status: formData.status });
         toast.success("User account updated.");
       } else {
-        await userService.create({ ...formData, password: "password123" });
+        if (!formData.password || formData.password.length < 8) {
+          toast.error("Password must be at least 8 characters.");
+          return;
+        }
+        await userService.create(formData);
         toast.success("New user account created.");
       }
       setModalOpen(false);
@@ -132,7 +137,7 @@ const AdminUsers = () => {
                   <td>{u.email}</td>
                   <td><Badge status={`badge-${u.role}`} label={u.role.toUpperCase()} /></td>
                   <td><Badge status={u.status} /></td>
-                  <td className="text-xs text-slate-400">{u.joinedAt}</td>
+                  <td className="text-xs text-slate-400">{fDate(u.created_at)}</td>
                   <td>
                     <div className="flex items-center gap-1">
                       <button
@@ -163,11 +168,14 @@ const AdminUsers = () => {
           <form onSubmit={handleSave} className="p-6 space-y-4">
             <Input label="Full Name" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
             <Input label="Email Address" type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+            {!editUser && (
+              <Input label="Password" type="password" required placeholder="Min. 8 characters" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+            )}
             <Select
               label="Assigned System Role"
               value={formData.role}
               onChange={e => setFormData({ ...formData, role: e.target.value })}
-              options={["applicant", "hr", "admin", "supervisor"]}
+              options={["hr", "admin", "supervisor"]}
             />
             <Select
               label="Account Status"

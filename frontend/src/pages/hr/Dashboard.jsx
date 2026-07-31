@@ -102,14 +102,14 @@ const HRDashboard = () => {
           <h3 className="font-bold text-slate-800 dark:text-white text-base mb-4">
             Applications by Department
           </h3>
-          <DepartmentBarChart />
+          <DepartmentBarChart applications={applications} />
         </div>
 
         <div className="card p-6">
           <h3 className="font-bold text-slate-800 dark:text-white text-base mb-4">
             Application Status Distribution
           </h3>
-          <StatusDoughnutChart />
+          <StatusDoughnutChart applications={applications} />
         </div>
       </div>
 
@@ -119,7 +119,7 @@ const HRDashboard = () => {
           <h3 className="font-bold text-slate-800 dark:text-white text-base mb-4">
             Monthly Applications Trend
           </h3>
-          <MonthlyLineChart />
+          <MonthlyLineChart applications={applications} />
         </div>
 
         <div className="card p-6">
@@ -133,7 +133,7 @@ const HRDashboard = () => {
           <h3 className="font-bold text-slate-800 dark:text-white text-base mb-4">
             Top Applicant Universities
           </h3>
-          <UniversityBarChart />
+          <UniversityBarChart applications={applications} />
         </div>
       </div>
 
@@ -168,7 +168,7 @@ const HRDashboard = () => {
                   <td>{app.university}</td>
                   <td><span className="font-semibold text-primary-600">{app.gpa}</span></td>
                   <td><Badge status={app.status} /></td>
-                  <td className="text-xs text-slate-400">{fDate(app.submittedAt)}</td>
+                  <td className="text-xs text-slate-400">{fDate(app.submitted_at || app.submittedAt)}</td>
                 </tr>
               ))}
             </tbody>
