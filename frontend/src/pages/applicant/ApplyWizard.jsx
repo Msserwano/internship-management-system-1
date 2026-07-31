@@ -96,10 +96,36 @@ const ApplyWizard = () => {
 
   const handleFileUpload = (field, e) => {
     const file = e.target.files[0];
-    if (file) {
-      handleChange(field, file.name);
-      toast.success(`${file.name} uploaded successfully.`);
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be under 10MB.");
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const docObj = {
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + " KB",
+        type: file.type,
+        data: event.target.result,
+        uploadedAt: new Date().toISOString()
+      };
+
+      setFormData((prev) => {
+        const nextDocs = { ...(prev.documents || {}), [field]: docObj };
+        return {
+          ...prev,
+          [field]: docObj,
+          documents: nextDocs
+        };
+      });
+
+      toast.success(`${file.name} uploaded successfully!`);
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleNext = () => {
@@ -117,13 +143,20 @@ const ApplyWizard = () => {
     }
     setSubmitting(true);
     try {
+      const docsToSubmit = formData.documents || {};
+      if (!docsToSubmit.cvDoc && formData.cvDoc) docsToSubmit.cvDoc = formData.cvDoc;
+      if (!docsToSubmit.recommendationDoc && formData.recommendationDoc) docsToSubmit.recommendationDoc = formData.recommendationDoc;
+      if (!docsToSubmit.transcriptDoc && formData.transcriptDoc) docsToSubmit.transcriptDoc = formData.transcriptDoc;
+      if (!docsToSubmit.nationalIdDoc && formData.nationalIdDoc) docsToSubmit.nationalIdDoc = formData.nationalIdDoc;
+
       await applicationService.submit({
         internshipId:   internship.id,
         university:     formData.university || "Makerere University",
         course:         formData.course || "General Studies",
         gpa:            formData.gpa || "3.5",
+        documents:      docsToSubmit,
       });
-      toast.success("Application submitted successfully to KCCA!");
+      toast.success("Application and attached documents submitted successfully to KCCA!");
       navigate("/applicant/applications");
     } catch (err) {
       const errMsg = err.response?.data?.message || "Failed to submit application. Please try again.";
@@ -396,42 +429,56 @@ const ApplyWizard = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { field: "nationalIdDoc", label: "National ID / Passport", desc: "PDF or JPG copy" },
-                  { field: "recommendationDoc", label: "University Recommendation Letter", desc: "Signed letter from Dean" },
-                  { field: "transcriptDoc", label: "Academic Transcript", desc: "Official transcript" },
-                  { field: "cvDoc", label: "Curriculum Vitae (CV)", desc: "Updated CV" },
+                  { field: "nationalIdDoc", label: "National ID / Passport", desc: "PDF, PNG or JPG copy" },
+                  { field: "recommendationDoc", label: "University Recommendation Letter", desc: "Signed letter from Dean/HOD" },
+                  { field: "transcriptDoc", label: "Academic Transcript", desc: "Official academic transcript" },
+                  { field: "cvDoc", label: "Curriculum Vitae (CV)", desc: "Updated detailed CV" },
                   { field: "coverLetterDoc", label: "Cover Letter", desc: "Addressed to KCCA HR" },
-                  { field: "photoDoc", label: "Passport Photo", desc: "Recent clear photo" },
-                ].map((doc) => (
-                  <div
-                    key={doc.field}
-                    className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40 space-y-2"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold text-xs text-slate-800 dark:text-white">{doc.label}</p>
-                        <p className="text-[11px] text-slate-400">{doc.desc}</p>
-                      </div>
-                      {formData[doc.field] && (
-                        <span className="badge badge-accepted text-[10px]">Uploaded</span>
-                      )}
-                    </div>
+                  { field: "photoDoc", label: "Passport Photo", desc: "Recent passport photo" },
+                ].map((doc) => {
+                  const val = formData[doc.field];
+                  const isUploaded = !!val;
+                  const fileName = typeof val === "object" ? val.name : val;
+                  const fileSize = typeof val === "object" ? val.size : "";
 
-                    <div className="flex items-center gap-2">
-                      <label className="btn btn-outline btn-xs cursor-pointer flex items-center gap-1">
-                        <Upload className="w-3 h-3" /> Select File
-                        <input
-                          type="file"
-                          className="hidden"
-                          onChange={(e) => handleFileUpload(doc.field, e)}
-                        />
-                      </label>
-                      <span className="text-xs text-slate-500 truncate flex-1">
-                        {formData[doc.field] || "No file chosen"}
-                      </span>
+                  return (
+                    <div
+                      key={doc.field}
+                      className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40 space-y-3"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-xs text-slate-800 dark:text-white">{doc.label}</p>
+                          <p className="text-[11px] text-slate-400">{doc.desc}</p>
+                        </div>
+                        {isUploaded ? (
+                          <span className="badge badge-accepted text-[10px] flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Uploaded
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-medium">Pending</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-700/50">
+                        <label className="btn btn-outline btn-xs cursor-pointer flex items-center gap-1">
+                          <Upload className="w-3 h-3" /> {isUploaded ? "Replace File" : "Select File"}
+                          <input
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                            className="hidden"
+                            onChange={(e) => handleFileUpload(doc.field, e)}
+                          />
+                        </label>
+                        {isUploaded && (
+                          <span className="text-xs font-semibold text-primary-600 truncate max-w-[150px]" title={fileName}>
+                            {fileName} {fileSize && `(${fileSize})`}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </motion.div>
           )}

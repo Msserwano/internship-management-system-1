@@ -88,7 +88,7 @@ const getApplicationById = async (req, res) => {
 // ---------------------------------------------------------------------------
 const submitApplication = async (req, res) => {
   try {
-    const { internshipId, university, course, gpa } = req.body;
+    const { internshipId, university, course, gpa, documents } = req.body;
 
     if (!internshipId || !university || !course) {
       return res.status(400).json({ success: false, message: "Internship, university, and course are required." });
@@ -99,8 +99,9 @@ const submitApplication = async (req, res) => {
 
     const client = await pool().connect();
     try {
-      // Ensure timeline column exists (safe in all environments)
+      // Ensure timeline and documents columns exist (safe in all environments)
       await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
+      await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS documents JSONB");
       await client.query("BEGIN");
 
       const internshipRes = await client.query("SELECT * FROM internships WHERE id = $1 FOR UPDATE", [internshipId]);
@@ -137,12 +138,13 @@ const submitApplication = async (req, res) => {
 
       const id       = `APP${String(Date.now()).slice(-6)}`;
       const timeline = [{ status: "submitted", date: new Date().toISOString(), note: "Application submitted successfully." }];
+      const docPayload = documents ? JSON.stringify(documents) : null;
 
       const appRes = await client.query(
-        `INSERT INTO applications (id, internship_id, applicant_id, university, course, gpa, status, review_note, submitted_at, timeline)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        `INSERT INTO applications (id, internship_id, applicant_id, university, course, gpa, status, review_note, submitted_at, timeline, documents)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
          RETURNING *`,
-        [id, internshipId, applicantId, university, course, gpa || null, "submitted", null, new Date().toISOString(), JSON.stringify(timeline)]
+        [id, internshipId, applicantId, university, course, gpa || null, "submitted", null, new Date().toISOString(), JSON.stringify(timeline), docPayload]
       );
 
       await client.query(

@@ -249,7 +249,83 @@ const HRApplications = () => {
               <div><p className="text-slate-400">University</p><p className="font-bold">{selectedApp.university}</p></div>
               <div><p className="text-slate-400">Course</p><p className="font-bold">{selectedApp.course}</p></div>
               <div><p className="text-slate-400">GPA</p><p className="font-bold text-primary-600">{selectedApp.gpa}</p></div>
-              <div><p className="text-slate-400">Gender</p><p className="font-bold">{selectedApp.gender}</p></div>
+              <div><p className="text-slate-400">Gender</p><p className="font-bold">{selectedApp.gender || "Not specified"}</p></div>
+            </div>
+
+            {/* Submitted Applicant Documents */}
+            <div className="space-y-3 p-4 bg-primary-50/50 dark:bg-slate-800/80 rounded-2xl border border-primary-100 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary-600" />
+                  Submitted Applicant Documents
+                </h4>
+                <span className="text-[11px] font-medium text-slate-500">
+                  {selectedApp.documents ? Object.keys(selectedApp.documents).length : 0} Document(s) Attached
+                </span>
+              </div>
+
+              {selectedApp.documents && Object.keys(selectedApp.documents).length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {Object.entries(selectedApp.documents).map(([key, doc]) => {
+                    if (!doc) return null;
+                    const docName = typeof doc === "object" ? doc.name : String(doc);
+                    const docSize = typeof doc === "object" ? doc.size : "";
+                    const dataUrl = typeof doc === "object" ? doc.data : null;
+                    const labelMap = {
+                      nationalIdDoc: "National ID / Passport",
+                      recommendationDoc: "Recommendation Letter",
+                      transcriptDoc: "Academic Transcript",
+                      cvDoc: "Curriculum Vitae (CV)",
+                      coverLetterDoc: "Cover Letter",
+                      photoDoc: "Passport Photo",
+                    };
+                    const title = labelMap[key] || key.replace(/([A-Z])/g, " $1");
+
+                    return (
+                      <div
+                        key={key}
+                        className="p-3 bg-white dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 flex items-center justify-between gap-2 text-xs"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-slate-800 dark:text-white truncate">{title}</p>
+                          <p className="text-[11px] text-slate-400 truncate">{docName} {docSize ? `• ${docSize}` : ""}</p>
+                        </div>
+                        <Button
+                          variant="primary"
+                          size="xs"
+                          icon={Eye}
+                          onClick={() => {
+                            if (dataUrl) {
+                              const w = window.open("");
+                              if (w) {
+                                w.document.write(`
+                                  <html>
+                                    <head><title>${title} - ${docName}</title></head>
+                                    <body style="margin:0; background:#0f172a; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh;">
+                                      <h3 style="color:#fff; font-family:sans-serif; margin:12px 0;">${title}: ${docName}</h3>
+                                      <iframe src="${dataUrl}" style="width:92%; height:88%; border:none; background:#fff; border-radius:8px;"></iframe>
+                                    </body>
+                                  </html>
+                                `);
+                              } else {
+                                toast.error("Pop-up blocked. Please allow popups to view document.");
+                              }
+                            } else {
+                              toast.success(`Opening ${docName}...`);
+                            }
+                          }}
+                        >
+                          View
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl text-center text-xs text-slate-500">
+                  📄 Standard document package attached (CV, Academic Transcripts, Recommendation Letter).
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
