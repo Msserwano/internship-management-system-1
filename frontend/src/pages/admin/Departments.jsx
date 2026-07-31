@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Building2, Plus, Pencil, Trash2, Search, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import api from "../../api/axios";
+import { subscribeDataChange } from "../../utils/eventBus";
 import toast from "react-hot-toast";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -113,7 +114,13 @@ export default function AdminDepartments() {
     }
   }, []);
 
-  useEffect(() => { fetchDepartments(); }, [fetchDepartments]);
+  useEffect(() => {
+    fetchDepartments();
+    const unsubscribe = subscribeDataChange(() => {
+      fetchDepartments();
+    });
+    return () => unsubscribe();
+  }, [fetchDepartments]);
 
   // ── CRUD ───────────────────────────────────────────────────────────────────
   const handleSave = async (form) => {

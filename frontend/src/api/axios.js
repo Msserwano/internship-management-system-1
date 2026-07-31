@@ -1,5 +1,6 @@
 
 import axios from "axios";
+import { notifyDataChanged } from "../utils/eventBus";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
@@ -14,7 +15,13 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const method = res.config?.method?.toLowerCase();
+    if (["post", "put", "patch", "delete"].includes(method)) {
+      notifyDataChanged(res.config?.url || "");
+    }
+    return res;
+  },
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem("kcca_token");

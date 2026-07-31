@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { notificationService } from "../api/services";
 import { useAuth } from "./AuthContext";
+import { subscribeDataChange } from "../utils/eventBus";
 
 const NotificationsContext = createContext(null);
 
@@ -69,7 +70,13 @@ export function NotificationsProvider({ children }) {
   useEffect(() => {
     fetchNotifications(1);
     const interval = setInterval(() => fetchNotifications(1), 30_000);
-    return () => clearInterval(interval);
+    const unsubscribe = subscribeDataChange(() => {
+      fetchNotifications(1);
+    });
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, [fetchNotifications]);
 
   // Derived unread count — based on the correct field name from the API
