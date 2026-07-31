@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "start:prod": "node src/server.js",
     "create-user": "node scripts/create-user.js",
+    "clear:applications": "node scripts/clear-application-data.js",
     "diagnose": "node scripts/diagnose.js"
   },
   "devDependencies": {
