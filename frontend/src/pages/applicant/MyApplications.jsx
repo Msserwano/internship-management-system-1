@@ -11,16 +11,21 @@ import Skeleton from "../../components/ui/Skeleton";
 import useApi from "../../hooks/useApi";
 import { applicationService } from "../../api/services";
 import { fDate } from "../../utils/formatters";
+import { useAuth } from "../../context/AuthContext";
+import { generateOfferLetterPdf } from "../../utils/generateOfferLetterPdf";
 import toast from "react-hot-toast";
 import {
   FileText, Download, XCircle, Clock, CheckCircle2, AlertCircle,
-  Eye, Calendar, ChevronRight
+  Eye, Calendar, ChevronRight, Award
 } from "lucide-react";
 
 const MyApplications = () => {
+  const { user } = useAuth();
   const { data: applications, loading, refetch } = useApi("/applications");
   const [selectedApp, setSelectedApp] = useState(null);
   const [withdrawTarget, setWithdrawTarget] = useState(null);
+
+  const acceptedApps = applications.filter(a => a.status === "accepted");
 
   const counts = {
     all: applications.length,
@@ -46,7 +51,8 @@ const MyApplications = () => {
   };
 
   const handleDownloadOffer = (app) => {
-    toast.success(`Downloading Offer Letter for ${app.internshipTitle}...`);
+    generateOfferLetterPdf(app, user);
+    toast.success(`Opening Official Offer Letter PDF for ${app.internshipTitle}...`);
   };
 
   if (loading) return (
@@ -66,7 +72,52 @@ const MyApplications = () => {
         </p>
       </div>
 
-      {}
+      {/* Acceptance Placement Offer Section */}
+      {acceptedApps.length > 0 && (
+        <div className="space-y-4">
+          {acceptedApps.map((acceptedApp) => (
+            <div key={acceptedApp.id} className="card p-6 bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50 dark:from-emerald-950/40 dark:to-green-950/40 border-2 border-emerald-500 rounded-2xl space-y-4 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-200 dark:border-emerald-800 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold flex-shrink-0 shadow">
+                    <Award className="w-6 h-6 text-yellow-300" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-widest bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-md">KCCA Official Placement Offer</span>
+                    <h3 className="font-extrabold text-slate-800 dark:text-white text-lg mt-0.5">{acceptedApp.internshipTitle}</h3>
+                  </div>
+                </div>
+                <Button variant="accent" size="sm" onClick={() => handleDownloadOffer(acceptedApp)} icon={Download}>
+                  Download Official Offer Letter
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-emerald-100 dark:border-emerald-900/60">
+                  <p className="text-slate-400">Assigned Directorate</p>
+                  <p className="font-bold text-slate-800 dark:text-white text-sm">{acceptedApp.department}</p>
+                </div>
+                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-emerald-100 dark:border-emerald-900/60">
+                  <p className="text-slate-400">Reporting Location</p>
+                  <p className="font-bold text-slate-800 dark:text-white text-sm">KCCA City Hall – Kampala</p>
+                </div>
+                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-emerald-100 dark:border-emerald-900/60">
+                  <p className="text-slate-400">Placement Status</p>
+                  <p className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">ACCEPTED &amp; PLACED</p>
+                </div>
+              </div>
+
+              {acceptedApp.reviewNote && (
+                <div className="p-3 bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 rounded-xl text-xs font-medium">
+                  📌 <strong>HR Officer Remarks:</strong> {acceptedApp.reviewNote}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Counts */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         {[
           { label: "Submitted", count: counts.submitted, color: "text-blue-600 bg-blue-50" },

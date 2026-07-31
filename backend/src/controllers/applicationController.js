@@ -216,60 +216,107 @@ const submitApplication = async (req, res) => {
 const updateApplication = async (req, res) => {
   try {
     const { id } = req.params;
-    const client = await pool().connect();
-    try {
-      await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
+    const pool = getPool();
+    await pool.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
 
-      const existing = (await client.query("SELECT * FROM applications WHERE id = $1", [id])).rows[0];
-      if (!existing) return res.status(404).json({ success: false, message: "Application not found." });
+    const existingRes = await pool.query("SELECT * FROM applications WHERE id = $1", [id]);
+    const existing = existingRes.rows[0];
+    if (!existing) return res.status(404).json({ success: false, message: "Application not found." });
 
-      // Applicants may only withdraw their own application
-      if (!isStaff(req.user)) {
-        const isOwner      = String(existing.applicant_id) === String(req.user.id);
-        const isWithdrawal = req.body.status === "withdrawn";
-        if (!isOwner || !isWithdrawal) {
-          return res.status(403).json({ success: false, message: "Applicants may only withdraw their own application." });
-        }
+    // Applicants may only withdraw their own application
+    if (!isStaff(req.user)) {
+      const isOwner      = String(existing.applicant_id) === String(req.user.id);
+      const isWithdrawal = req.body.status === "withdrawn";
+      if (!isOwner || !isWithdrawal) {
+        return res.status(403).json({ success: false, message: "Applicants may only withdraw their own application." });
       }
-
-      const { status, reviewNote, review_note } = req.body;
-      const note    = reviewNote || review_note || null;
-      let timeline  = existing.timeline || [];
-
-      if (status && status !== existing.status) {
-        timeline = timeline.concat([{
-          status,
-          date: new Date().toISOString(),
-          note: note || `Status updated to ${status}.`,
-        }]);
-      }
-
-      const allowed = ["status", "review_note", "timeline"];
-      const sets    = [];
-      const params  = [];
-      let idx = 1;
-
-      const updates = { ...req.body, timeline, review_note: note };
-
-      for (const k of Object.keys(updates)) {
-        const col = k === "reviewNote" ? "review_note" : k;
-        if (!allowed.includes(col)) continue;
-        params.push(col === "timeline" ? JSON.stringify(updates[k]) : updates[k]);
-        sets.push(`${col} = $${idx}`);
-        idx++;
-      }
-
-      if (sets.length === 0) return res.status(400).json({ success: false, message: "No valid fields to update." });
-
-      params.push(id);
-      const result = await client.query(
-        `UPDATE applications SET ${sets.join(", ")}, updated_at=NOW() WHERE id = $${idx} RETURNING *`,
-        params
-      );
-      return res.status(200).json({ success: true, message: "Application updated successfully.", data: result.rows[0] });
-    } finally {
-      client.release();
     }
+
+    const newStatus  = req.body.status || existing.status;
+    const reviewNote = req.body.reviewNote || req.body.review_note || existing.review_note;
+    let timeline     = existing.timeline || [];
+
+    if (newStatus && newStatus !== existing.status) {
+      timeline = timeline.concat([{
+        status: newStatus,
+        date: new Date().toISOString(),
+        note: reviewNote || `Status updated to ${newStatus}.`,
+      }]);
+    }
+
+    const updateRes = await pool.query(
+      `UPDATE applications
+       SET status = $1, review_note = $2, timeline = $3, updated_at = NOW()
+       WHERE id = $4
+       RETURNING *`,
+      [newStatus, reviewNote, JSON.stringify(timeline), id]
+    );
+
+    const updatedApp = updateRes.rows[0];
+
+    // If status changed, send notification to applicant asynchronously
+    if (newStatus && newStatus !== existing.status) {
+      (async () => {
+        try {
+          const appRes = await pool.query(
+            `SELECT a.*, app.email AS applicant_email, app.full_name AS applicant_name, i.title AS internship_title, i.department
+             FROM applications a
+             LEFT JOIN applicants app ON app.applicant_id::text = a.applicant_id
+             LEFT JOIN internships i ON i.id = a.internship_id
+             WHERE a.id = $1`,
+            [id]
+          );
+          const row = appRes.rows[0];
+          const recipientEmail = row?.applicant_email;
+          const recipientName  = row?.applicant_name || "Applicant";
+          const jobTitle       = row?.internship_title || "Internship";
+          const deptName       = row?.department || "General";
+
+          // 1. Insert In-App Notification for Applicant
+          await pool.query(
+            `INSERT INTO notifications (user_id, type, payload, is_read, created_at)
+             VALUES ($1, $2, $3, false, NOW())`,
+            [
+              existing.applicant_id,
+              newStatus === "accepted" ? "application_accepted" : newStatus === "rejected" ? "application_rejected" : "status_updated",
+              JSON.stringify({
+                applicationId: id,
+                status: newStatus,
+                internshipTitle: jobTitle,
+                department: deptName,
+                message: newStatus === "accepted"
+                  ? `CONGRATULATIONS! Your application for ${jobTitle} (${deptName} Directorate) has been ACCEPTED by KCCA HR! Placement offered.`
+                  : `Your application for ${jobTitle} status has been updated to ${newStatus}.`
+              })
+            ]
+          );
+
+          // 2. Dispatch Email
+          if (recipientEmail) {
+            const subject = newStatus === "accepted"
+              ? `CONGRATULATIONS! KCCA Internship Placement Offer - ${jobTitle}`
+              : `Update on KCCA Internship Application - ${jobTitle}`;
+            const html = newStatus === "accepted"
+              ? `<h2>Congratulations ${recipientName}!</h2>
+                 <p>We are thrilled to inform you that your application for <strong>${jobTitle}</strong> in the <strong>${deptName}</strong> Directorate has been <strong>ACCEPTED</strong>!</p>
+                 <p>Please log in to your KCCA Internship Portal to view your official placement details and reporting instructions.</p>`
+              : `<p>Dear ${recipientName},</p><p>Your application status for <strong>${jobTitle}</strong> has been updated to: <strong>${newStatus}</strong>.</p>`;
+
+            await sendNotificationEmail(recipientEmail, subject, html, subject);
+          }
+
+          // 3. Audit log
+          await pool.query(
+            `INSERT INTO audit_logs (action, resource_type, resource_id, user_id, new_value, created_at) VALUES ($1,$2,$3,$4,$5,NOW())`,
+            [newStatus.toUpperCase(), 'APPLICATION', id, req.user.id, JSON.stringify({ status: newStatus, note: reviewNote })]
+          );
+        } catch (nErr) {
+          console.warn("[UPDATE APPLICATION] Notification async error:", nErr.message);
+        }
+      })();
+    }
+
+    return res.status(200).json({ success: true, message: `Application status updated to ${newStatus}.`, data: updatedApp });
   } catch (err) {
     console.error("[APPLICATION] update failed:", err.message);
     return res.status(500).json({ success: false, message: "Failed to update application." });

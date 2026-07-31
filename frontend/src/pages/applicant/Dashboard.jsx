@@ -8,10 +8,10 @@ import Button from "../../components/ui/Button";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Skeleton from "../../components/ui/Skeleton";
 import useApi from "../../hooks/useApi";
-import { fDate } from "../../utils/formatters";
+import { generateOfferLetterPdf } from "../../utils/generateOfferLetterPdf";
 import {
   Briefcase, FileText, CheckCircle2, Clock, ArrowRight, User,
-  Calendar, Award, AlertCircle
+  Calendar, Award, AlertCircle, Download
 } from "lucide-react";
 
 const ApplicantDashboard = () => {
@@ -25,11 +25,55 @@ const ApplicantDashboard = () => {
   const shortlistedCount   = userApplications.filter(a => a.status === "shortlisted").length;
   const pendingCount       = userApplications.filter(a => a.status === "under_review" || a.status === "submitted").length;
 
+  const acceptedApp = applications.find(a => a.status === "accepted");
+
   return (
     <div className="page-container">
       <Breadcrumbs />
 
-      {}
+      {/* Acceptance Banner if candidate received an offer */}
+      {acceptedApp && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-3xl p-6 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border-2 border-emerald-400"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+              <Award className="w-8 h-8 text-yellow-300" />
+            </div>
+            <div>
+              <span className="bg-yellow-400 text-slate-900 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+                OFFICIAL INTERNSHIP OFFER
+              </span>
+              <h2 className="text-xl font-extrabold mt-1">
+                CONGRATULATIONS! You Have Been Accepted!
+              </h2>
+              <p className="text-xs text-emerald-100 mt-0.5 leading-relaxed">
+                Your application for <strong>{acceptedApp.internshipTitle}</strong> in the <strong>{acceptedApp.department}</strong> Directorate has been APPROVED by KCCA HR!
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => generateOfferLetterPdf(acceptedApp, user)}
+              className="whitespace-nowrap font-bold !bg-yellow-400 !text-slate-900 hover:!bg-yellow-300"
+              icon={Download}
+            >
+              Download PDF Offer Letter
+            </Button>
+            <Link to="/applicant/applications">
+              <Button variant="secondary" size="md" className="whitespace-nowrap font-bold !bg-white !text-emerald-800 hover:!bg-emerald-50">
+                View Placement Details <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Header Banner */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
