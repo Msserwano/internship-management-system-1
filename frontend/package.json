@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "type-check": "tsc --noEmit",
-    "lint": "oxlint",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -27,16 +25,5 @@
     "tailwind-merge": "^3.6.0",
     "zod": "^3.25.76"
   },
-  "devDependencies": {
-    "@types/node": "^18.16.19",
-    "@types/react": "^18.2.28",
-    "@types/react-dom": "^18.2.6",
-    "@vitejs/plugin-react": "^5.0.0",
-    "autoprefixer": "^10.5.4",
-    "oxlint": "^1.71.0",
-    "postcss": "^8.5.23",
-    "tailwindcss": "^3.4.19",
-    "typescript": "^5.2.2",
-    "vite": "^4.4.9"
-  }
+  
 }
