@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Button from "../../components/ui/Button";
@@ -8,14 +7,15 @@ import Modal from "../../components/ui/Modal";
 import Badge from "../../components/ui/Badge";
 import Skeleton from "../../components/ui/Skeleton";
 import useApi from "../../hooks/useApi";
-import { interviewService } from "../../api/services";
-import { Calendar, Plus, Clock, MapPin, Mail, Smartphone, Video } from "lucide-react";
+import { interviewService, applicationService } from "../../api/services";
+import { Calendar, Plus, Clock, MapPin, Mail, Smartphone, CheckCircle2, XCircle, UserCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
 const HRInterviews = () => {
   const { data: interviews, loading, refetch } = useApi("/interviews");
   const { data: applications }                 = useApi("/applications");
   const [modalOpen, setModalOpen] = useState(false);
+  const [actionId, setActionId]   = useState(null);
 
   const [formData, setFormData] = useState({
     applicationId: "",
@@ -36,16 +36,16 @@ const HRInterviews = () => {
     e.preventDefault();
     try {
       await interviewService.schedule({
-        applicationId:  formData.applicationId,
-        applicantName:  formData.applicantName,
+        applicationId:   formData.applicationId,
+        applicantName:   formData.applicantName,
         internshipTitle: formData.internshipTitle,
-        department:     formData.department,
-        date:           formData.date,
-        time:           formData.time,
-        venue:          formData.venue,
-        meetingLink:    formData.meetingLink,
-        instructions:   formData.instructions,
-        panelMembers:   formData.panelMembers.split(","),
+        department:      formData.department,
+        date:            formData.date,
+        time:            formData.time,
+        venue:           formData.venue,
+        meetingLink:     formData.meetingLink,
+        instructions:    formData.instructions,
+        panelMembers:    formData.panelMembers.split(","),
       });
       toast.success("Interview scheduled! Email & SMS notifications dispatched.");
       setModalOpen(false);
@@ -55,12 +55,28 @@ const HRInterviews = () => {
     }
   };
 
+  const handleUpdateApplicationStatus = async (appId, newStatus) => {
+    if (!appId) return toast.error("Application ID not found.");
+    setActionId(appId);
+    try {
+      await applicationService.update(appId, {
+        status: newStatus,
+        reviewNote: newStatus === "accepted" ? "Passed interview assessment — internship placement offered." : "Unsuccessful after interview assessment."
+      });
+      toast.success(`Candidate marked as ${newStatus.toUpperCase()}!`);
+      refetch();
+    } catch (err) {
+      toast.error(err.response?.data?.message || `Failed to update status to ${newStatus}.`);
+    } finally {
+      setActionId(null);
+    }
+  };
+
   if (loading) return (
     <div className="page-container"><Breadcrumbs />
       <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
     </div>
   );
-
 
   return (
     <div className="page-container">
@@ -68,9 +84,9 @@ const HRInterviews = () => {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Interview Scheduling</h1>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Interview Scheduling &amp; Evaluation</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Schedule candidate panel interviews, assign venues, and dispatch automated invitations.
+            Schedule candidate panel interviews, track applicant confirmations, and issue final placement offers.
           </p>
         </div>
 
@@ -79,15 +95,15 @@ const HRInterviews = () => {
         </Button>
       </div>
 
-      {}
+      {/* Hero Banner */}
       <div className="card p-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-gradient-to-r from-primary-600 to-primary-800 text-white">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
             <Calendar className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">August 2026 Interview Calendar</h2>
-            <p className="text-xs text-primary-100">{interviews.length} Panel Session(s) Scheduled</p>
+            <h2 className="text-xl font-bold">Interview Operations Center</h2>
+            <p className="text-xs text-primary-100">{interviews.length} Interview Session(s) Recorded</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -97,34 +113,90 @@ const HRInterviews = () => {
         </div>
       </div>
 
-      {}
+      {/* Interviews List */}
       <div className="space-y-4">
-        {interviews.map((ivw) => (
-          <div key={ivw.id} className="card p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-800 dark:text-white text-base">{ivw.applicantName}</h3>
-                <span className="badge badge-shortlisted">{ivw.internshipTitle}</span>
-              </div>
-              <p className="text-xs text-slate-500">
-                <Clock className="w-3.5 h-3.5 inline text-slate-400 mr-1"/>
-                {ivw.interviewDate || ivw.interview_date} at {ivw.interviewTime || ivw.interview_time} • <MapPin className="w-3.5 h-3.5 inline text-slate-400 mx-1"/> {ivw.venue}
-              </p>
-              <p className="text-xs text-slate-400">
-                Panel: <strong className="text-slate-600 dark:text-slate-300">{Array.isArray(ivw.panelMembers || ivw.panel_members) ? (ivw.panelMembers || ivw.panel_members).join(", ") : (ivw.panelMembers || ivw.panel_members || '—')}</strong>
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="xs" onClick={() => toast.success("Invitation re-sent via Email & SMS.")} icon={Mail}>
-                Resend Invite
-              </Button>
-            </div>
+        {interviews.length === 0 ? (
+          <div className="card p-12 text-center text-slate-400 text-sm space-y-3">
+            <Calendar className="w-12 h-12 mx-auto opacity-30" />
+            <p className="font-semibold">No interviews scheduled yet.</p>
+            <Button variant="primary" size="sm" onClick={() => setModalOpen(true)} icon={Plus}>Schedule First Interview</Button>
           </div>
-        ))}
+        ) : (
+          interviews.map((ivw) => {
+            const statusVal = String(ivw.status || ivw.response || "scheduled").toLowerCase();
+            const isAccepted = statusVal === "accepted";
+            const isDeclined = statusVal === "declined";
+
+            // Find matching application to check application status
+            const app = applications.find(a => String(a.id) === String(ivw.application_id || ivw.applicationId));
+            const appStatus = (app?.status || "").toLowerCase();
+
+            return (
+              <div key={ivw.id} className="card p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <div className="space-y-2 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-bold text-slate-800 dark:text-white text-base">{ivw.applicantName}</h3>
+                    <span className="badge badge-shortlisted text-xs">{ivw.internshipTitle}</span>
+
+                    {/* Applicant Confirmation Badge */}
+                    {isAccepted ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Applicant Confirmed
+                      </span>
+                    ) : isDeclined ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                        <XCircle className="w-3.5 h-3.5" /> Applicant Declined
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                        <Clock className="w-3.5 h-3.5" /> Pending Response
+                      </span>
+                    )}
+
+                    {/* Overall Application Status Badge if Accepted */}
+                    {appStatus === "accepted" && (
+                      <span className="badge badge-accepted font-bold text-xs">PLACEMENT OFFERED</span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-slate-500">
+                    <Clock className="w-3.5 h-3.5 inline text-slate-400 mr-1"/>
+                    {ivw.interviewDate || ivw.interview_date} at {ivw.interviewTime || ivw.interview_time} • <MapPin className="w-3.5 h-3.5 inline text-slate-400 mx-1"/> {ivw.venue}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Panel: <strong className="text-slate-600 dark:text-slate-300">{Array.isArray(ivw.panelMembers || ivw.panel_members) ? (ivw.panelMembers || ivw.panel_members).join(", ") : (ivw.panelMembers || ivw.panel_members || '—')}</strong>
+                  </p>
+                </div>
+
+                {/* Actions: Re-send invite or Accept Candidate */}
+                <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+                  <Button variant="outline" size="xs" onClick={() => toast.success("Invitation re-sent via Email & SMS.")} icon={Mail}>
+                    Resend Invite
+                  </Button>
+
+                  {appStatus !== "accepted" ? (
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      onClick={() => handleUpdateApplicationStatus(ivw.application_id || ivw.applicationId, "accepted")}
+                      loading={actionId === (ivw.application_id || ivw.applicationId)}
+                      icon={UserCheck}
+                    >
+                      Accept &amp; Offer Placement
+                    </Button>
+                  ) : (
+                    <span className="text-xs font-bold text-green-600 flex items-center gap-1">
+                      <CheckCircle2 className="w-4 h-4" /> Offered
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
-      {}
+      {/* Modal */}
       {modalOpen && (
         <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Schedule Panel Interview" size="lg">
           <form onSubmit={handleSchedule} className="p-6 space-y-4">
@@ -175,7 +247,7 @@ const HRInterviews = () => {
 
             <div className="flex justify-end gap-2 pt-3 border-t">
               <Button type="button" variant="ghost" size="sm" onClick={() => setModalOpen(false)}>Cancel</Button>
-              <Button type="submit" variant="primary" size="md">Confirm & Dispatch Invitation</Button>
+              <Button type="submit" variant="primary" size="md">Confirm &amp; Dispatch Invitation</Button>
             </div>
           </form>
         </Modal>
