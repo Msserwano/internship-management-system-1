@@ -1,258 +1,426 @@
-export const generateOfferLetterPdf = (app, user) => {
-  const applicantName   = app.applicantName || user?.name || "Applicant";
-  const internshipTitle = app.internshipTitle || "Internship Program";
-  const department      = app.department || "Directorate of Administration";
-  const university      = app.university || user?.university || "Makerere University";
-  const course          = app.course || user?.course || "Undergraduate Degree Program";
-  const refNo           = `KCCA/HR/INT/${new Date().getFullYear()}/${app.id || 'OFFER'}`;
-  const todayDate       = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+export const generateOfferLetterPdf = (app = {}, user = {}) => {
+  const applicantName   = app.applicantName || user?.name || "Sserwano Moris";
+  const genderPrefix    = (user?.gender || "").toLowerCase() === "female" ? "Ms." : "Mr.";
+  const fullNameWithSalutation = applicantName.startsWith("Mr.") || applicantName.startsWith("Ms.") || applicantName.startsWith("Mrs.") || applicantName.startsWith("Dr.")
+    ? applicantName
+    : `${genderPrefix} ${applicantName}`;
+
+  const university      = app.university || user?.university || "Azerbaijan State Oil and Industry University";
+  const phone           = app.phone || user?.phone || "0756481468";
+  const department      = app.department || "Information and Communication Technology";
+  const refNo           = `DAHR/KCCA/201/${app.id ? String(app.id).replace(/\D/g, "").slice(-2) || "08" : "08"}`;
+
+  const getOrdinalDate = (dateObj) => {
+    const day = dateObj.getDate();
+    const month = dateObj.toLocaleString("en-US", { month: "long" });
+    const year = dateObj.getFullYear();
+    let suffix = "th";
+    if (day % 10 === 1 && day !== 11) suffix = "st";
+    else if (day % 10 === 2 && day !== 12) suffix = "nd";
+    else if (day % 10 === 3 && day !== 13) suffix = "rd";
+    return `${day}<sup>${suffix}</sup> ${month}, ${year}`;
+  };
+
+  const today = new Date();
+  const letterDateStr = getOrdinalDate(today);
+
+  // Reference letter date (approx 12 days prior)
+  const refDateObj = new Date(today);
+  refDateObj.setDate(refDateObj.getDate() - 12);
+  const refDateStr = getOrdinalDate(refDateObj);
+
+  // Start date (approx 30 days after)
+  const startDateObj = new Date(today);
+  startDateObj.setDate(startDateObj.getDate() + 30);
+  const startDateStr = getOrdinalDate(startDateObj);
+
+  // End date (approx 80 days after)
+  const endDateObj = new Date(today);
+  endDateObj.setDate(endDateObj.getDate() + 80);
+  const endDateStr = getOrdinalDate(endDateObj);
+
+  // Orientation date (approx 1 day after letter)
+  const orientDateObj = new Date(today);
+  orientDateObj.setDate(orientDateObj.getDate() + 1);
+  const orientDateStr = getOrdinalDate(orientDateObj);
 
   const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <title>KCCA Internship Placement Offer Letter - ${applicantName}</title>
+      <title>KCCA Internship Placement Letter - ${applicantName}</title>
       <style>
         @page {
-          size: A4;
-          margin: 20mm;
+          size: A4 portrait;
+          margin: 0;
+        }
+        * {
+          box-sizing: border-box;
         }
         body {
-          font-family: 'Times New Roman', Times, serif;
-          color: #111827;
-          line-height: 1.6;
+          font-family: Arial, Helvetica, sans-serif;
+          color: #111111;
           margin: 0;
-          padding: 30px;
-          background: #fff;
+          padding: 0;
+          background: #ffffff;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
-        .header-table {
-          width: 100%;
-          border-collapse: collapse;
-          border-bottom: 3px double #0f766e;
-          padding-bottom: 15px;
-          margin-bottom: 20px;
+        .page {
+          width: 210mm;
+          min-height: 297mm;
+          padding: 20mm 20mm 35mm 22mm;
+          position: relative;
+          background: #ffffff;
+          overflow: hidden;
         }
-        .logo-title {
-          text-align: center;
+
+        /* Background Watermark */
+        .watermark {
+          position: absolute;
+          top: 48%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          font-size: 140px;
+          font-weight: 900;
+          color: rgba(0, 0, 0, 0.035);
+          letter-spacing: 12px;
+          pointer-events: none;
+          user-select: none;
+          z-index: 1;
+          font-family: Arial, sans-serif;
         }
-        .kcca-title {
-          font-size: 22px;
-          font-weight: bold;
-          color: #065f46;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          margin: 0;
-        }
-        .sub-title {
-          font-size: 13px;
-          font-weight: bold;
-          color: #1f2937;
-          margin: 2px 0 0 0;
-          text-transform: uppercase;
-        }
-        .address-line {
-          font-size: 11px;
-          color: #4b5563;
-          margin: 2px 0 0 0;
-        }
-        .ref-date-row {
+
+        /* Top Header Grid */
+        .top-header {
           display: flex;
           justify-content: space-between;
-          font-size: 13px;
-          font-weight: bold;
+          align-items: flex-start;
           margin-bottom: 25px;
-          color: #374151;
+          position: relative;
+          z-index: 2;
         }
-        .recipient-block {
-          margin-bottom: 25px;
+        .logo-block {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .kcca-logo-svg {
+          width: 140px;
+          height: auto;
+        }
+
+        .header-title-block {
+          text-align: right;
+          max-width: 320px;
+          padding-top: 5px;
+        }
+        .dept-title {
           font-size: 14px;
-        }
-        .recipient-name {
-          font-weight: bold;
+          font-weight: 800;
+          color: #1e293b;
           text-transform: uppercase;
+          line-height: 1.35;
+          letter-spacing: 0.5px;
         }
-        .subject-bar {
-          background-color: #f0fdf4;
-          border-left: 4px solid #16a34a;
-          padding: 10px 15px;
-          font-size: 14px;
-          font-weight: bold;
-          color: #065f46;
-          text-transform: uppercase;
-          margin-bottom: 20px;
-        }
-        .body-text {
+
+        /* Ref & Date */
+        .ref-block {
           font-size: 13.5px;
-          text-align: justify;
-          margin-bottom: 15px;
-        }
-        .details-box {
-          width: 100%;
-          border-collapse: collapse;
-          margin: 20px 0;
-          font-size: 13px;
-        }
-        .details-box td {
-          padding: 8px 12px;
-          border: 1px solid #d1d5db;
-        }
-        .details-box tr:nth-child(even) {
-          background-color: #f9fafb;
-        }
-        .details-label {
           font-weight: bold;
-          width: 35%;
-          color: #1f2937;
+          color: #0f172a;
+          margin-bottom: 6px;
+          position: relative;
+          z-index: 2;
         }
-        .requirements-list {
-          font-size: 13px;
-          margin-bottom: 25px;
-          padding-left: 20px;
+        .date-block {
+          font-size: 13.5px;
+          color: #0f172a;
+          margin-bottom: 20px;
+          position: relative;
+          z-index: 2;
         }
-        .signature-block {
-          margin-top: 40px;
-          font-size: 13px;
+
+        /* Recipient Block */
+        .recipient-info {
+          font-size: 13.5px;
+          line-height: 1.45;
+          color: #0f172a;
+          margin-bottom: 22px;
+          position: relative;
+          z-index: 2;
         }
-        .stamp-box {
-          display: inline-block;
-          border: 2px dashed #16a34a;
-          color: #15803d;
+        .recipient-info .name {
           font-weight: bold;
-          padding: 8px 20px;
-          border-radius: 8px;
+        }
+        .recipient-info .city {
+          font-weight: bold;
           text-transform: uppercase;
-          font-size: 11px;
-          letter-spacing: 1px;
-          margin-top: 15px;
+          margin-top: 2px;
         }
-        .footer-note {
-          margin-top: 40px;
-          border-top: 1px solid #e5e7eb;
-          padding-top: 10px;
-          font-size: 10px;
-          color: #6b7280;
-          text-align: center;
+
+        /* Subject Line */
+        .subject-line {
+          font-size: 13.5px;
+          font-weight: 800;
+          text-transform: uppercase;
+          color: #0f172a;
+          margin-bottom: 18px;
+          letter-spacing: 0.2px;
+          position: relative;
+          z-index: 2;
         }
+
+        /* Letter Body Paragraphs */
+        .letter-body {
+          font-size: 13px;
+          line-height: 1.6;
+          color: #1e293b;
+          text-align: justify;
+          position: relative;
+          z-index: 2;
+        }
+        .letter-body p {
+          margin: 0 0 16px 0;
+        }
+
+        /* Signature Section */
+        .signature-section {
+          margin-top: 28px;
+          position: relative;
+          z-index: 2;
+        }
+        .signature-img {
+          width: 150px;
+          height: auto;
+          margin-bottom: -10px;
+          display: block;
+        }
+        .signatory-name {
+          font-size: 13.5px;
+          font-weight: bold;
+          color: #0f172a;
+          margin-top: 4px;
+        }
+        .signatory-title {
+          font-size: 12.5px;
+          font-weight: 800;
+          color: #0f172a;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+
+        /* Copy List (CC) */
+        .cc-block {
+          margin-top: 22px;
+          font-size: 12.5px;
+          color: #0f172a;
+          position: relative;
+          z-index: 2;
+          line-height: 1.5;
+        }
+        .cc-block strong {
+          font-weight: bold;
+        }
+        .cc-list {
+          padding-left: 45px;
+          margin-top: -18px;
+        }
+
+        /* Bottom Right Dark Angle Footer Graphic */
+        .footer-banner {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 75%;
+          height: 110px;
+          background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
+          clip-path: polygon(18% 0, 100% 0, 100% 100%, 0% 100%);
+          color: #ffffff;
+          padding: 25px 25px 12px 60px;
+          text-align: right;
+          font-size: 10.5px;
+          line-height: 1.45;
+          z-index: 10;
+        }
+        .footer-banner p {
+          margin: 1px 0;
+          color: #f1f5f9;
+        }
+        .footer-banner .web {
+          font-weight: bold;
+          color: #ffffff;
+        }
+
+        /* No Print Toolbar */
+        .no-print-bar {
+          background: #0f172a;
+          color: #ffffff;
+          padding: 14px 20px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          font-family: system-ui, sans-serif;
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .print-btn {
+          background: #fbbf24;
+          color: #0f172a;
+          border: none;
+          padding: 9px 22px;
+          font-size: 14px;
+          font-weight: bold;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background 0.2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .print-btn:hover {
+          background: #f59e0b;
+        }
+
         @media print {
-          body { padding: 0; }
-          .no-print { display: none !important; }
+          .no-print-bar {
+            display: none !important;
+          }
+          .page {
+            padding: 15mm 18mm 30mm 18mm;
+            width: 100%;
+            min-height: auto;
+          }
+          .footer-banner {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       </style>
     </head>
     <body>
-      <div class="no-print" style="background:#0f766e; color:#fff; padding:12px; text-align:center; font-family:sans-serif; margin-bottom:20px; border-radius:8px;">
-        <button onclick="window.print()" style="background:#fbbf24; color:#000; border:none; padding:8px 20px; font-weight:bold; font-size:14px; border-radius:6px; cursor:pointer; margin-right:10px;">
-          🖨️ Print / Save as PDF
-        </button>
-        <span style="font-size:13px;">Click the button above or press Ctrl+P to save this official placement offer letter as a PDF document.</span>
-      </div>
-
-      <table class="header-table">
-        <tr>
-          <td class="logo-title">
-            <h1 class="kcca-title">Kampala Capital City Authority</h1>
-            <p class="sub-title">Directorate of Administration & Human Resource Management</p>
-            <p class="address-line">City Hall, P.O. Box 7010, Kampala, Uganda | Phone: +256 (0) 414 581 294 | Email: info@kcca.go.ug</p>
-          </td>
-        </tr>
-      </table>
-
-      <div class="ref-date-row">
-        <div>REF: ${refNo}</div>
-        <div>DATE: ${todayDate}</div>
-      </div>
-
-      <div class="recipient-block">
-        <div class="recipient-name">${applicantName}</div>
-        <div>${course}</div>
-        <div>${university}</div>
-        <div>Kampala, Uganda</div>
-      </div>
-
-      <div class="subject-bar">
-        RE: OFFICIAL OFFER OF INTERNSHIP PLACEMENT — ${internshipTitle.toUpperCase()}
-      </div>
-
-      <div class="body-text">
-        Dear <strong>${applicantName}</strong>,
-      </div>
-
-      <div class="body-text">
-        Following your application and successful evaluation for the <strong>${internshipTitle}</strong> opportunity at Kampala Capital City Authority (KCCA), we are pleased to inform you that you have been <strong>SELECTED</strong> for an internship placement under the <strong>${department}</strong> Directorate.
-      </div>
-
-      <div class="body-text">
-        The key details regarding your internship placement are outlined below:
-      </div>
-
-      <table class="details-box">
-        <tr>
-          <td class="details-label">Candidate Name:</td>
-          <td><strong>${applicantName}</strong></td>
-        </tr>
-        <tr>
-          <td class="details-label">Institution / University:</td>
-          <td>${university}</td>
-        </tr>
-        <tr>
-          <td class="details-label">Internship Title:</td>
-          <td><strong>${internshipTitle}</strong></td>
-        </tr>
-        <tr>
-          <td class="details-label">Assigned Directorate:</td>
-          <td><strong>${department}</strong></td>
-        </tr>
-        <tr>
-          <td class="details-label">Reporting Location:</td>
-          <td>KCCA City Hall, Kampala (Directorate Offices)</td>
-        </tr>
-        <tr>
-          <td class="details-label">Placement Status:</td>
-          <td><strong style="color:#15803d;">CONFIRMED &amp; APPROVED</strong></td>
-        </tr>
-      </table>
-
-      <div class="body-text">
-        <strong>Reporting Requirements:</strong><br>
-        On your first day of reporting, you are required to present the following documents to the Human Resource Management Office (3rd Floor, Room 314, City Hall):
-      </div>
-
-      <ol class="requirements-list">
-        <li>Original National Identity Card (NIN) or Valid Student Identification Card.</li>
-        <li>Original Letter of Recommendation from <strong>${university}</strong>.</li>
-        <li>Two (2) recent passport-size photographs.</li>
-        <li>Copy of your academic transcripts or testimonial.</li>
-      </ol>
-
-      <div class="body-text">
-        Please note that this internship program is governed by the KCCA Standing Orders and Internship Policy guidelines. You will be assigned a designated Departmental Mentor/Supervisor upon reporting.
-      </div>
-
-      <div class="body-text">
-        We congratulate you on your selection and look forward to your valuable contribution toward building a vibrant, attractive, and sustainable capital city.
-      </div>
-
-      <div class="signature-block">
-        <div>Yours Faithfully,</div>
-        <br><br>
-        <div style="font-weight:bold; font-size:14px;">DIRECTOR HUMAN RESOURCE &amp; ADMINISTRATION</div>
-        <div style="font-size:12px; color:#4b5563;">Kampala Capital City Authority (KCCA)</div>
-
-        <div class="stamp-box">
-          ✓ OFFICIALLY VERIFIED &amp; ISSUED BY KCCA HR
+      <div class="no-print-bar">
+        <div>
+          <strong style="font-size:15px;">Official KCCA Placement Letter Format</strong>
+          <span style="font-size:12px; color:#cbd5e1; margin-left:10px;">Ready for Print / PDF Export</span>
         </div>
+        <button class="print-btn" onclick="window.print()">
+          🖨️ Save as PDF / Print
+        </button>
       </div>
 
-      <div class="footer-note">
-        This is an official computer-generated document issued by the KCCA Internship Portal (${refNo}). For verification queries, email hr@kcca.go.ug.
+      <div class="page">
+        <!-- Watermark -->
+        <div class="watermark">KCCA</div>
+
+        <!-- Top Header -->
+        <div class="top-header">
+          <div class="logo-block">
+            <!-- KCCA Official Logo SVG -->
+            <svg class="kcca-logo-svg" viewBox="0 0 280 120" xmlns="http://www.w3.org/2000/svg">
+              <!-- Clock Tower Graphic -->
+              <g transform="translate(70, 0)">
+                <rect x="42" y="5" width="26" height="42" fill="#1e293b" rx="2" />
+                <polygon points="55,0 38,10 72,10" fill="#0f172a" />
+                <circle cx="55" cy="22" r="7" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+                <line x1="55" y1="22" x2="55" y2="18" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round" />
+                <line x1="55" y1="22" x2="58" y2="22" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round" />
+                <!-- Base arches -->
+                <rect x="36" y="47" width="38" height="6" fill="#334155" />
+                <path d="M 30,53 L 80,53 L 74,62 L 36,62 Z" fill="#1e293b" />
+              </g>
+              <!-- KCCA Text -->
+              <text x="5" y="86" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="900" fill="#0f172a" letter-spacing="-1">KCCA</text>
+              <text x="6" y="98" font-family="Arial, Helvetica, sans-serif" font-size="7.5" font-weight="bold" fill="#334155" letter-spacing="0.5">KAMPALA CAPITAL CITY AUTHORITY</text>
+              <text x="32" y="110" font-family="'Georgia', serif" font-size="9" font-style="italic" fill="#475569">For a better City</text>
+            </svg>
+          </div>
+
+          <div class="header-title-block">
+            <div class="dept-title">
+              DIRECTORATE OF ADMINISTRATION<br>AND HUMAN RESOURCE
+            </div>
+          </div>
+        </div>
+
+        <!-- Ref & Date -->
+        <div class="ref-block">REF: ${refNo}</div>
+        <div class="date-block">${letterDateStr}</div>
+
+        <!-- Recipient Info -->
+        <div class="recipient-info">
+          <div class="name">${fullNameWithSalutation}</div>
+          <div>${university}</div>
+          <div>Tel: ${phone}</div>
+          <div class="city">KAMPALA</div>
+        </div>
+
+        <!-- Subject -->
+        <div class="subject-line">
+          RE: APPLICATION FOR INTERNSHIP PLACEMENT
+        </div>
+
+        <!-- Letter Body -->
+        <div class="letter-body">
+          <p>
+            Reference is made to your letter date ${refDateStr} on the above subject.
+          </p>
+
+          <p>
+            This is to inform you that your request has been granted. You will be training, and supervised in the Directorate of <strong>${department}</strong> from ${startDateStr} to ${endDateStr}. You are therefore expected to adhere to the timeline.
+          </p>
+
+          <p>
+            You are expected to attend orientation, which will be conducted on ${orientDateStr} at 9:00am in the mayor's parlor, City Hall. In addition, you will be required to take an Oath of Secrecy with the Directorate of Administration and Human Resource in and thereafter be deployed to your respective Directorate.
+          </p>
+
+          <p>
+            By copy of this letter, the assigned Supervisor is expected to assess and provide a report on your performance and behavior at the end of the training period.
+          </p>
+
+          <p>
+            I wish you a satisfactory experience during your two months Internship training with Kampala Capital City Authority.
+          </p>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+          <!-- Stylized Blue Ink Signature SVG matching original photo -->
+          <svg class="signature-img" viewBox="0 0 200 65" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 15,45 C 35,10 50,5 65,35 C 75,55 90,15 110,30 C 120,40 100,50 85,55 C 70,60 60,40 75,20 C 85,10 120,5 140,25 C 150,35 130,50 115,52 C 90,55 80,30 95,15 C 110,5 145,15 165,35 C 175,45 155,55 140,50" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M 45,20 L 45,55 M 35,38 L 85,38" fill="none" stroke="#1d4ed8" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+
+          <div class="signatory-name">Grace Akullo (Mrs.)</div>
+          <div class="signatory-title">DIRECTOR ADMINISTRATION AND HUMAN RESOURCE</div>
+        </div>
+
+        <!-- Copy List (CC) -->
+        <div class="cc-block">
+          <strong>Copy:</strong>
+          <div class="cc-list">
+            <div>Deputy Director ${department}</div>
+            <div>File Copy</div>
+          </div>
+        </div>
+
+        <!-- Bottom Right Dark Angle Footer -->
+        <div class="footer-banner">
+          <p><strong>P. O. Box 7010 Kampala- Uganda</strong></p>
+          <p>Plot 1-3 Apollo Kaggwa Road</p>
+          <p>Tel: 0414 231 446 / 0204 660 000</p>
+          <p class="web">Web: www.kcca.go.ug, Email: info@kcca.go.ug</p>
+        </div>
       </div>
 
       <script>
         window.onload = function() {
           setTimeout(function() {
             window.print();
-          }, 600);
+          }, 500);
         };
       </script>
     </body>
