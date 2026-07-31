@@ -152,10 +152,10 @@ const submitApplication = async (req, res) => {
 
       await client.query("COMMIT");
 
-      // Notify HR staff asynchronously (fire-and-forget — don't block the response)
+      // Notify all HR and Admin staff members asynchronously
       (async () => {
         try {
-          const hrRes = await pool().query("SELECT id, email, name FROM users WHERE LOWER(role)='hr' AND (status IS NULL OR LOWER(status)='active')");
+          const hrRes = await pool().query("SELECT id, email, name FROM users WHERE LOWER(role) IN ('hr', 'admin') AND (status IS NULL OR LOWER(status)='active')");
           if (hrRes.rowCount > 0) {
             const app = appRes.rows[0];
             const subject = `New application submitted for ${internship.title}`;
@@ -175,7 +175,7 @@ const submitApplication = async (req, res) => {
               try {
                 await pool().query(
                   `INSERT INTO notifications (user_id, type, payload, is_read, created_at) VALUES ($1,$2,$3,false,NOW())`,
-                  [hr.id, "application_submitted", JSON.stringify({ applicationId: app.id, internshipId, applicantId })]
+                  [hr.id, "application_submitted", JSON.stringify({ applicationId: app.id, internshipId, applicantId, applicantName: req.user.name, title: internship.title })]
                 );
               } catch (e) {
                 console.warn("[NOTIFY] DB notification insert failed:", e.message);
@@ -187,6 +187,11 @@ const submitApplication = async (req, res) => {
               }
             }
           }
+          // Insert audit log
+          await pool().query(
+            `INSERT INTO audit_logs (action, resource_type, resource_id, user_id, new_value, created_at) VALUES ($1,$2,$3,$4,$5,NOW())`,
+            ['SUBMIT', 'APPLICATION', appRes.rows[0].id, applicantId, JSON.stringify({ internshipId, title: internship.title, university, course, gpa })]
+          );
         } catch (notifyErr) {
           console.warn("[APPLICATION] HR notification async error:", notifyErr.message);
         }
