@@ -35,6 +35,7 @@ const userRoutes = require("./routes/userRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const genericRoutes = require("./routes/genericRoutes");
 
 const app = express();
 
@@ -110,6 +111,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/notifications", notificationRoutes);
+// Generic CRUD for allowed tables (users, internships, applications, interviews)
+app.use('/api/data', genericRoutes);
 
 // ── 404 Handler ─────────────────────────────────────────────────────────
 app.use(notFoundHandler);

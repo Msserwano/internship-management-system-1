@@ -59,7 +59,11 @@ const internshipSchemas = {
     department: z.string().min(2, "Department is required"),
     description: z.string().min(20, "Description must be at least 20 characters"),
     vacancies: z.number().min(1, "Must have at least 1 vacancy"),
-    deadline: z.string().refine((date) => new Date(date) > new Date(), "Deadline must be in the future"),
+    // Accept ISO date strings; ensure valid date and that it's in the future
+    deadline: z.string().refine((date) => {
+      const d = new Date(date);
+      return !Number.isNaN(d.getTime()) && d > new Date();
+    }, "Deadline must be a valid future date"),
     supervisor: z.string().optional(),
     duration: z.string().optional(),
     location: z.string().optional(),
@@ -101,8 +105,13 @@ const applicationSchemas = {
 const interviewSchemas = {
   create: z.object({
     applicationId: z.string().min(1, "Application ID is required"),
-    interviewDate: z.string().refine((date) => new Date(date) > new Date(), "Interview date must be in the future"),
-    interviewTime: z.string().regex(/^\d{2}:\d{2}$/, "Time must be in HH:MM format"),
+    // Ensure a valid ISO date in the future
+    interviewDate: z.string().refine((date) => {
+      const d = new Date(date);
+      return !Number.isNaN(d.getTime()) && d > new Date();
+    }, "Interview date must be a valid future date"),
+    // Enforce 24-hour time HH:MM where hours 00-23 and minutes 00-59
+    interviewTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Time must be in HH:MM 24-hour format"),
     venue: z.string().min(5, "Venue is required"),
     meetingLink: z.string().url().optional(),
   }),
@@ -121,8 +130,9 @@ const interviewSchemas = {
  */
 const querySchemas = {
   pagination: z.object({
-    page: z.string().regex(/^\d+$/).transform(Number).optional(),
-    limit: z.string().regex(/^\d+$/).transform(Number).optional(),
+    // Parse numeric query params into integers and enforce minimums
+    page: z.preprocess((val) => (val === undefined ? undefined : Number(val)), z.number().int().min(1).optional()),
+    limit: z.preprocess((val) => (val === undefined ? undefined : Number(val)), z.number().int().min(1).optional()),
   }),
 
   search: z.object({
