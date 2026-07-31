@@ -126,7 +126,22 @@ const ApplyWizard = () => {
     reader.readAsDataURL(file);
   };
 
+  const isJobClosed = (job) => {
+    if (!job) return false;
+    if (job.status === "closed" || job.status === "inactive") return true;
+    if (job.deadline) {
+      const d = new Date(job.deadline);
+      d.setHours(23, 59, 59, 999);
+      if (d < new Date()) return true;
+    }
+    return false;
+  };
+
   const handleNext = () => {
+    if (isJobClosed(internship)) {
+      toast.error("This internship posting is closed to new applications.");
+      return;
+    }
     if (currentStep < 5) setCurrentStep(currentStep + 1);
   };
 
@@ -139,13 +154,15 @@ const ApplyWizard = () => {
       toast.error("Invalid internship selected.");
       return;
     }
+    if (isJobClosed(internship)) {
+      toast.error("This internship posting is currently closed to new applications.");
+      return;
+    }
     setSubmitting(true);
     try {
       const docsToSubmit = formData.documents || {};
-      if (!docsToSubmit.cvDoc && formData.cvDoc) docsToSubmit.cvDoc = formData.cvDoc;
       if (!docsToSubmit.recommendationDoc && formData.recommendationDoc) docsToSubmit.recommendationDoc = formData.recommendationDoc;
       if (!docsToSubmit.transcriptDoc && formData.transcriptDoc) docsToSubmit.transcriptDoc = formData.transcriptDoc;
-      if (!docsToSubmit.nationalIdDoc && formData.nationalIdDoc) docsToSubmit.nationalIdDoc = formData.nationalIdDoc;
 
       await applicationService.submit({
         internshipId:   internship.id,
@@ -194,9 +211,16 @@ const ApplyWizard = () => {
 
   return (
     <div className="page-container max-w-4xl mx-auto">
-      <Breadcrumbs />
+      {isJobClosed(internship) && (
+        <div className="p-4 mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-2xl text-sm font-semibold flex items-center justify-between">
+          <span>⚠️ Posting Closed: This internship vacancy is currently closed to new applications.</span>
+          <Link to="/applicant/internships" className="btn btn-outline btn-xs !text-red-700 dark:!text-red-300">
+            Browse Other Vacancies
+          </Link>
+        </div>
+      )}
 
-      {}
+      {/* Header Banner */}
       <div className="card p-6 bg-gradient-to-r from-primary-600 to-primary-800 text-white mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -543,9 +567,10 @@ const ApplyWizard = () => {
               size="md"
               onClick={handleSubmit}
               loading={submitting}
+              disabled={submitting || isJobClosed(internship)}
               icon={Send}
             >
-              Submit Application
+              {isJobClosed(internship) ? "Posting Closed" : "Submit Application"}
             </Button>
           )}
         </div>

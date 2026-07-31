@@ -27,6 +27,17 @@ const AvailableInternships = () => {
     Array.isArray(myApplications) &&
     myApplications.some((a) => String(a.internshipId || a.internship_id) === String(jobId));
 
+  const isJobClosed = (job) => {
+    if (!job) return false;
+    if (job.status === "closed" || job.status === "inactive") return true;
+    if (job.deadline) {
+      const d = new Date(job.deadline);
+      d.setHours(23, 59, 59, 999);
+      if (d < new Date()) return true;
+    }
+    return false;
+  };
+
   const filtered = useMemo(() => {
     return internships.filter((job) => {
       const matchSearch =
@@ -66,7 +77,7 @@ const AvailableInternships = () => {
         </div>
       </div>
 
-      {}
+      {/* Filters */}
       <div className="card p-5 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Input
@@ -107,7 +118,7 @@ const AvailableInternships = () => {
         )}
       </div>
 
-      {}
+      {/* Cards */}
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((job, idx) => (
@@ -126,6 +137,8 @@ const AvailableInternships = () => {
                   </div>
                   {isApplied(job.id) ? (
                     <span className="badge badge-accepted text-[10px]">Applied</span>
+                  ) : isJobClosed(job) ? (
+                    <span className="badge badge-rejected text-[10px]">Closed</span>
                   ) : (
                     <span className="badge badge-open text-[10px]">Open</span>
                   )}
@@ -158,7 +171,7 @@ const AvailableInternships = () => {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                     <Calendar className="w-4 h-4 text-slate-400" />
-                    <span>Deadline: <strong className="text-danger">{fDeadline(job.deadline)}</strong></span>
+                    <span>Deadline: <strong className={isJobClosed(job) ? "text-danger font-bold" : "text-slate-700 dark:text-slate-200"}>{fDeadline(job.deadline)}</strong></span>
                   </div>
                 </div>
               </div>
@@ -175,6 +188,14 @@ const AvailableInternships = () => {
                   >
                     View Status
                   </Link>
+                ) : isJobClosed(job) ? (
+                  <button
+                    disabled
+                    onClick={(e) => e.stopPropagation()}
+                    className="btn btn-ghost btn-xs opacity-60 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700"
+                  >
+                    Posting Closed
+                  </button>
                 ) : (
                   <Link
                     to={`/applicant/apply/${job.id}`}
@@ -207,9 +228,19 @@ const AvailableInternships = () => {
         >
           <div className="p-6 space-y-6">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="badge badge-open text-xs">Open Vacancy</span>
+              {isJobClosed(selectedJob) ? (
+                <span className="badge badge-rejected text-xs">Closed Vacancy</span>
+              ) : (
+                <span className="badge badge-open text-xs">Open Vacancy</span>
+              )}
               <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">{selectedJob.department}</span>
             </div>
+
+            {isJobClosed(selectedJob) && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-xl text-xs font-semibold border border-red-200 dark:border-red-800">
+                ⚠️ Notice: This internship posting is currently closed and is no longer accepting new applications.
+              </div>
+            )}
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl">
               <div>
@@ -239,23 +270,29 @@ const AvailableInternships = () => {
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{selectedJob.description}</p>
             </div>
 
-            <div>
-              <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-2">Requirements</h4>
-              <ul className="list-disc list-inside text-sm text-slate-600 dark:text-slate-300 space-y-1">
-                {selectedJob.requirements.map((req, i) => (
-                  <li key={i}>{req}</li>
-                ))}
-              </ul>
-            </div>
+            {Array.isArray(selectedJob.requirements) && selectedJob.requirements.length > 0 && (
+              <div>
+                <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-2">Requirements</h4>
+                <ul className="list-disc list-inside text-sm text-slate-600 dark:text-slate-300 space-y-1">
+                  {selectedJob.requirements.map((req, i) => (
+                    <li key={i}>{req}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
-              <span className="text-xs text-slate-500">Supervisor: <strong>{selectedJob.supervisor}</strong></span>
+              <span className="text-xs text-slate-500">Supervisor: <strong>{selectedJob.supervisor || "HR Officer"}</strong></span>
               {isApplied(selectedJob.id) ? (
                 <Link to="/applicant/applications">
                   <Button variant="secondary" size="md">
                     View My Submitted Application
                   </Button>
                 </Link>
+              ) : isJobClosed(selectedJob) ? (
+                <Button variant="ghost" size="md" disabled className="opacity-50 cursor-not-allowed">
+                  Application Closed
+                </Button>
               ) : (
                 <Link to={`/applicant/apply/${selectedJob.id}`}>
                   <Button variant="primary" size="md" icon={ArrowRight}>
