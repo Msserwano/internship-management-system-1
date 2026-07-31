@@ -32,6 +32,7 @@ const { apiRateLimit, authRateLimit } = require("./middleware/rateLimit");
 const authRoutes = require("./routes/authRoutes");
 const internshipRoutes = require("./routes/internshipRoutes");
 const userRoutes = require("./routes/userRoutes");
+const applicantRoutes = require("./routes/applicantRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
@@ -108,6 +109,7 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/internships", internshipRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/applicants", applicantRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/notifications", notificationRoutes);
