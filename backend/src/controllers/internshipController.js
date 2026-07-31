@@ -1,5 +1,6 @@
 // backend/src/controllers/internshipController.js
 const { getPool } = require("../config/database");
+const db = require("../config/db");
 const pool = getPool();
 
 /**
@@ -111,6 +112,10 @@ const deleteInternship = async (req, res) => {
     const { id } = req.params;
     const result = await pool.query('DELETE FROM internships WHERE id = $1 RETURNING id', [id]);
     if (result.rowCount === 0) return res.status(404).json({ success: false, message: 'Internship not found or already deleted.' });
+    // Record audit log for deletion
+    const actor = req.user ? { id: req.user.id, role: req.user.role } : null;
+    const reason = req.body && req.body.reason ? req.body.reason : req.query && req.query.reason ? req.query.reason : null;
+    await db.appendAuditLog({ action: 'delete', table: 'internships', id: result.rows[0].id, actor, reason });
     return res.status(200).json({ success: true, message: 'Internship posting deleted successfully.', id: result.rows[0].id });
   } catch (err) {
     console.error('[INTERNSHIP CONTROLLER] delete failed:', err.message);

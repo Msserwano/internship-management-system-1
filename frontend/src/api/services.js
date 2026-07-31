@@ -104,3 +104,9 @@ export const notificationService = {
   markRead: (id) => api.put(`/notifications/${id}/read`),
   markAllRead: () => api.put('/notifications/mark-all-read'),
 };
+
+export const auditService = {
+  // Export audit logs; responseType blob recommended for CSV
+  export: (params = {}, opts = {}) => api.get('/data/audit-logs/export', { params, responseType: opts.responseType || 'blob' }),
+  list: (params = {}) => api.get('/data/audit-logs', { params }),
+};

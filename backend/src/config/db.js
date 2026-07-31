@@ -55,6 +55,9 @@ const INITIAL_DB = {
   interviews: [
     { id: "IVW001", applicationId: "APP001", applicantName: "Sarah Nakimuli", internshipTitle: "Software Development Intern", department: "ICT", date: "2026-08-05", time: "10:00 AM", venue: "KCCA Boardroom 2, City Hall", meetingLink: "https://meet.google.com/kcca-int-2026", status: "scheduled" },
   ]
+  ,
+  // Audit log for destructive operations
+  auditLogs: []
 };
 
 // Memory store initialized from disk or default seed
@@ -64,7 +67,9 @@ const loadDbStore = () => {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
+      // Ensure auditLogs exists and merge data safely
       dbStore = { ...INITIAL_DB, ...data };
+      if (!dbStore.auditLogs) dbStore.auditLogs = [];
     } else {
       saveDbStore();
     }
@@ -102,14 +107,19 @@ const db = {
   // ── RETRIEVE (FIND ALL / FILTER) ──────────────────────────────────────────
   async find(table, filterFn = null) {
     const list = dbStore[table] || [];
-    if (!filterFn) return [...list];
-    return list.filter(filterFn);
+    // By default skip soft-deleted records
+    const active = list.filter((item) => !item || item.deleted !== true);
+    if (!filterFn) return [...active];
+    return active.filter(filterFn);
   },
 
   // ── RETRIEVE BY ID ────────────────────────────────────────────────────────
   async findById(table, id) {
     const list = dbStore[table] || [];
-    return list.find((item) => String(item.id) === String(id)) || null;
+    const item = list.find((item) => String(item.id) === String(id)) || null;
+    if (!item) return null;
+    if (item.deleted) return null;
+    return item;
   },
 
   // ── WRITE / STORE (CREATE) ────────────────────────────────────────────────
@@ -142,13 +152,74 @@ const db = {
   },
 
   // ── DELETE ────────────────────────────────────────────────────────────────
-  async delete(table, id) {
+  async appendAuditLog(entry) {
+    if (!dbStore.auditLogs) dbStore.auditLogs = [];
+    const log = { id: `LOG${Date.now()}`, timestamp: new Date().toISOString(), ...entry };
+    dbStore.auditLogs.unshift(log);
+    saveDbStore();
+    return log;
+  },
+
+  // filter: { table, id, action }
+  // options: { page, limit }
+  async getAuditLogs(filter = {}, options = {}) {
+    const logs = dbStore.auditLogs || [];
+    const filtered = logs.filter((l) => {
+      if (filter.table && String(l.table) !== String(filter.table)) return false;
+      if (filter.id && String(l.id) !== String(filter.id)) return false;
+      if (filter.action && String(l.action) !== String(filter.action)) return false;
+      return true;
+    });
+    const total = filtered.length;
+    const page = Math.max(1, Number(options.page) || 1);
+    const limit = Math.max(1, Number(options.limit) || total);
+    const start = (page - 1) * limit;
+    const data = filtered.slice(start, start + limit);
+    return { total, page, limit, data };
+  },
+
+  // Permanently remove soft-deleted records in a table and record audit entries
+  async purgeDeleted(table) {
+    const list = dbStore[table] || [];
+    const toRemove = list.filter((it) => it && it.deleted === true);
+    if (toRemove.length === 0) return { removed: 0 };
+    // Remove items
+    dbStore[table] = list.filter((it) => !(it && it.deleted === true));
+    // Log removals
+    for (const it of toRemove) {
+      await this.appendAuditLog({ action: 'purge', table, id: it.id, removed: it });
+    }
+    saveDbStore();
+    return { removed: toRemove.length };
+  },
+
+  // opts: { soft: true|false, actor: {id, role}, reason }
+  async delete(table, id, opts = { soft: true, actor: null, reason: null }) {
     const list = dbStore[table] || [];
     const idx = list.findIndex((item) => String(item.id) === String(id));
     if (idx === -1) return false;
 
-    dbStore[table].splice(idx, 1);
+    const actor = opts.actor || null;
+    const reason = opts.reason || null;
+
+    if (opts.soft) {
+      // Mark deleted flag and metadata
+      list[idx] = {
+        ...list[idx],
+        deleted: true,
+        deletedAt: new Date().toISOString(),
+        deletedBy: actor,
+        deleteReason: reason,
+      };
+      saveDbStore();
+      await this.appendAuditLog({ action: 'soft-delete', table, id, actor, reason });
+      return true;
+    }
+
+    // Hard delete
+    const removed = list.splice(idx, 1);
     saveDbStore();
+    await this.appendAuditLog({ action: 'delete', table, id, actor, reason, removed: removed[0] });
     return true;
   }
 };
