@@ -105,6 +105,7 @@ const AppRouter = () => (
         <Route path="dashboard"     element={<ApplicantDashboard />} />
         <Route path="internships"   element={<AvailableInternships />} />
         <Route path="applications"  element={<MyApplications />} />
+        <Route path="apply"         element={<ApplyWizard />} />
         <Route path="apply/:id"     element={<ApplyWizard />} />
         <Route path="interviews"    element={<InterviewSchedule />} />
         <Route path="documents"     element={<Documents />} />

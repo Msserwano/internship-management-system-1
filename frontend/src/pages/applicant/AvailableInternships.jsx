@@ -16,11 +16,16 @@ import { Search, Filter, Briefcase, MapPin, Clock, Users, ArrowRight, X, Calenda
 
 const AvailableInternships = () => {
   const { data: internships, loading } = useApi("/internships");
+  const { data: myApplications } = useApi("/applications");
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
   const [durationFilter, setDurationFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [selectedJob, setSelectedJob] = useState(null);
+
+  const isApplied = (jobId) =>
+    Array.isArray(myApplications) &&
+    myApplications.some((a) => String(a.internshipId || a.internship_id) === String(jobId));
 
   const filtered = useMemo(() => {
     return internships.filter((job) => {
@@ -119,7 +124,11 @@ const AvailableInternships = () => {
                   <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
                     <Briefcase className="w-5 h-5 text-primary-500" />
                   </div>
-                  <span className="badge badge-open">Open</span>
+                  {isApplied(job.id) ? (
+                    <span className="badge badge-accepted text-[10px]">Applied</span>
+                  ) : (
+                    <span className="badge badge-open text-[10px]">Open</span>
+                  )}
                 </div>
 
                 <h3 className="font-bold text-slate-800 dark:text-white text-base mb-1 group-hover:text-primary-600 transition">
@@ -133,7 +142,7 @@ const AvailableInternships = () => {
                   {job.description}
                 </p>
 
-                {}
+                {/* Details */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                     <Clock className="w-4 h-4 text-slate-400" />
@@ -158,13 +167,23 @@ const AvailableInternships = () => {
                 <span className="text-[11px] text-slate-500 font-medium">
                   Posted: {fDate(job.posted_at || job.postedAt || job.created_at || job.posted)}
                 </span>
-                <Link
-                  to={`/applicant/apply/${job.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="btn btn-primary btn-xs"
-                >
-                  Apply Now <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                {isApplied(job.id) ? (
+                  <Link
+                    to="/applicant/applications"
+                    onClick={(e) => e.stopPropagation()}
+                    className="btn btn-outline btn-xs !text-accent-600 !border-accent-400"
+                  >
+                    View Status
+                  </Link>
+                ) : (
+                  <Link
+                    to={`/applicant/apply/${job.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="btn btn-primary btn-xs"
+                  >
+                    Apply Now <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                )}
               </div>
             </motion.div>
           ))}
@@ -231,11 +250,19 @@ const AvailableInternships = () => {
 
             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
               <span className="text-xs text-slate-500">Supervisor: <strong>{selectedJob.supervisor}</strong></span>
-              <Link to={`/applicant/apply/${selectedJob.id}`}>
-                <Button variant="primary" size="md" icon={ArrowRight}>
-                  Proceed to Application
-                </Button>
-              </Link>
+              {isApplied(selectedJob.id) ? (
+                <Link to="/applicant/applications">
+                  <Button variant="secondary" size="md">
+                    View My Submitted Application
+                  </Button>
+                </Link>
+              ) : (
+                <Link to={`/applicant/apply/${selectedJob.id}`}>
+                  <Button variant="primary" size="md" icon={ArrowRight}>
+                    Proceed to Application
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </Modal>
