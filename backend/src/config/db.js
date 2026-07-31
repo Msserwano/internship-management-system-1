@@ -28,36 +28,11 @@ if (process.env.DATABASE_URL) {
 
 
 const INITIAL_DB = {
-  users: [
-    { id: "U001", name: "Sarah Nakimuli", firstName: "Sarah", lastName: "Nakimuli", email: "applicant@kcca.go.ug", password: "password123", role: "applicant", phone: "+256 701 234 567", gender: "Female", district: "Kampala", nationality: "Ugandan", status: "active", createdAt: "2026-07-01T00:00:00.000Z", isVerified: true },
-    { id: "U002", name: "James Ssemakula", firstName: "James", lastName: "Ssemakula", email: "hr@kcca.go.ug", password: "password123", role: "hr", phone: "+256 703 456 789", title: "HR Officer", status: "active", createdAt: "2025-01-15T00:00:00.000Z", isVerified: true },
-    { id: "U003", name: "Patricia Nakato", firstName: "Patricia", lastName: "Nakato", email: "admin@kcca.go.ug", password: "password123", role: "admin", phone: "+256 704 789 012", title: "System Administrator", status: "active", createdAt: "2024-06-01T00:00:00.000Z", isVerified: true },
-    { id: "U004", name: "Alex Ssebaggala", firstName: "Alex", lastName: "Ssebaggala", email: "alex.ssebaggala@gmail.com", password: "password123", role: "applicant", phone: "+256 702 111 222", gender: "Male", district: "Wakiso", isVerified: true },
-    { id: "U005", name: "Brenda Atuhaire", firstName: "Brenda", lastName: "Atuhaire", email: "brenda.atuhaire@gmail.com", password: "password123", role: "applicant", phone: "+256 705 333 444", gender: "Female", district: "Mukono", isVerified: true },
-    { id: "U006", name: "David Ochieng", firstName: "David", lastName: "Ochieng", email: "david.ochieng@gmail.com", password: "password123", role: "applicant", phone: "+256 706 555 666", gender: "Male", district: "Jinja", isVerified: true },
-    { id: "U007", name: "Joan Nanteza", firstName: "Joan", lastName: "Nanteza", email: "joan.nanteza@gmail.com", password: "password123", role: "applicant", phone: "+256 707 777 888", gender: "Female", district: "Kampala", isVerified: true },
-    { id: "U008", name: "Emmanuel Kato", firstName: "Emmanuel", lastName: "Kato", email: "emmanuel.kato@gmail.com", password: "password123", role: "applicant", phone: "+256 708 999 000", gender: "Male", district: "Masaka", isVerified: true },
-  ],
-  internships: [
-    { id: "INT001", title: "Software Development Intern", department: "ICT", description: "Develop and maintain internal web apps and databases.", vacancies: 4, deadline: "2026-08-15", supervisor: "Mr. Peter Mwesigwa", duration: "3 Months", location: "City Hall – Kampala", status: "open", posted: "2026-07-01", applicantsCount: 23 },
-    { id: "INT002", title: "Public Health Intern", department: "Public Health Services", description: "Community health outreach programs and data collection.", vacancies: 6, deadline: "2026-08-20", supervisor: "Dr. Aisha Namazzi", duration: "6 Months", location: "Kawempe Division", status: "open", posted: "2026-07-05", applicantsCount: 41 },
-    { id: "INT003", title: "Urban Planning Intern", department: "Urban Planning", description: "Support land-use mapping and environmental impact assessments.", vacancies: 3, deadline: "2026-08-30", supervisor: "Eng. Moses Kabugo", duration: "4 Months", location: "City Hall – Kampala", status: "open", posted: "2026-07-08", applicantsCount: 15 },
-    { id: "INT004", title: "Finance & Accounts Intern", department: "Finance & Planning", description: "Assist in financial reporting, budget prep, and audit support.", vacancies: 5, deadline: "2026-09-01", supervisor: "Ms. Grace Akullo", duration: "3 Months", location: "City Hall – Kampala", status: "open", posted: "2026-07-10", applicantsCount: 37 },
-  ],
-  applications: [
-    { id: "APP001", internshipId: "INT001", internshipTitle: "Software Development Intern", department: "ICT", applicantId: "U001", applicantName: "Sarah Nakimuli", university: "Makerere University", course: "Computer Science", gender: "Female", gpa: "4.5", status: "shortlisted", submittedAt: "2026-07-10T09:30:00Z", reviewNote: "Exceptional academic background and strong coding skills.", assignedHrName: "James Ssemakula" },
-    { id: "APP002", internshipId: "INT004", internshipTitle: "Finance & Accounts Intern", department: "Finance & Planning", applicantId: "U005", applicantName: "Brenda Atuhaire", university: "Uganda Christian University", course: "Accounting & Finance", gender: "Female", gpa: "4.2", status: "under_review", submittedAt: "2026-07-15T11:00:00Z", reviewNote: "Documents verified. Pending HR department manager endorsement.", assignedHrName: "James Ssemakula" },
-    { id: "APP003", internshipId: "INT002", internshipTitle: "Public Health Intern", department: "Public Health Services", applicantId: "U006", applicantName: "David Ochieng", university: "MUST", course: "Public Health", gender: "Male", gpa: "4.1", status: "shortlisted", submittedAt: "2026-07-18T14:20:00Z", reviewNote: "Strong community outreach background and research experience.", assignedHrName: "James Ssemakula" },
-    { id: "APP004", internshipId: "INT003", internshipTitle: "Urban Planning Intern", department: "Urban Planning", applicantId: "U008", applicantName: "Emmanuel Kato", university: "Makerere University", course: "Urban Planning & Environment", gender: "Male", gpa: "3.9", status: "submitted", submittedAt: "2026-07-20T08:45:00Z", reviewNote: "Application received and queued for initial screening.", assignedHrName: null },
-    { id: "APP005", internshipId: "INT001", internshipTitle: "Software Development Intern", department: "ICT", applicantId: "U004", applicantName: "Alex Ssebaggala", university: "Kyambogo University", course: "Information Technology", gender: "Male", gpa: "4.3", status: "interview", submittedAt: "2026-07-21T10:15:00Z", reviewNote: "Invited for technical interview.", assignedHrName: "James Ssemakula" },
-    { id: "APP006", internshipId: "INT002", internshipTitle: "Public Health Intern", department: "Public Health Services", applicantId: "U007", applicantName: "Joan Nanteza", university: "MUBS", course: "Business Administration", gender: "Female", gpa: "3.7", status: "accepted", submittedAt: "2026-07-22T16:00:00Z", reviewNote: "Approved for placement in Kawempe Division outreach team.", assignedHrName: "James Ssemakula" }
-  ],
-  interviews: [
-    { id: "IVW001", applicationId: "APP001", applicantName: "Sarah Nakimuli", internshipTitle: "Software Development Intern", department: "ICT", date: "2026-08-05", time: "10:00 AM", venue: "KCCA Boardroom 2, City Hall", meetingLink: "https://meet.google.com/kcca-int-2026", status: "scheduled" },
-  ]
-  ,
-
-  auditLogs: []
+  users: [],
+  internships: [],
+  applications: [],
+  interviews: [],
+  auditLogs: [],
 };
 
 

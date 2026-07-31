@@ -1,28 +1,18 @@
 -- =============================================================================
--- KCCA Internship Management System — Seed Data
--- =============================================================================
---
--- NOTE: This file cannot contain real bcrypt password hashes because bcrypt
--- hashing requires a runtime (Node.js).  Passwords are seeded programmatically
--- by the backend when the server starts for the first time:
---
---   npm start  →  initializeDatabase()  →  seedDemoUsers()
---
--- All demo users are created with the password:  password123
---
--- Demo login credentials:
---   applicant@kcca.go.ug  /  password123  (role: applicant)
---   hr@kcca.go.ug         /  password123  (role: hr)
---   admin@kcca.go.ug      /  password123  (role: admin)
---
--- To apply this seed manually (after the server has run once and hashed the
--- passwords), you can re-run:
---
---   node -e "require('./src/config/database').seedDemoUsers().then(() => process.exit())"
---
--- from the backend/ directory.
+-- KCCA Internship Management System — Database Reset & Clean Setup
 -- =============================================================================
 
--- The actual INSERT statements are executed by seedDemoUsers() in
--- backend/src/config/database.js using ON CONFLICT DO NOTHING so they are
--- idempotent and safe to run multiple times.
+-- Run this command to wipe all existing data and leave tables completely empty:
+TRUNCATE TABLE audit_logs, notifications, interviews, applications, internships, users RESTART IDENTITY CASCADE;
+
+-- =============================================================================
+-- Insert your custom data below:
+-- =============================================================================
+
+-- Example User Insert:
+-- INSERT INTO users (id, name, first_name, last_name, email, password_hash, role, phone, status, is_verified)
+-- VALUES ('U001', 'Admin User', 'Admin', 'User', 'admin@kcca.go.ug', '$2a$10$...hash', 'admin', '+256 700 000 000', 'active', true);
+
+-- Example Internship Insert:
+-- INSERT INTO internships (id, title, department, description, vacancies, deadline, supervisor, duration, location, status)
+-- VALUES ('INT001', 'Software Developer Intern', 'ICT', 'Develop web portals.', 2, '2026-12-31', 'Supervisor Name', '3 Months', 'City Hall', 'open');

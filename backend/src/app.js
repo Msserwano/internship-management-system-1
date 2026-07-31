@@ -121,15 +121,14 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 
-const { testConnection, initializeSchema, seedDemoUsers } = require("./config/database");
+const { testConnection, initializeSchema } = require("./config/database");
 
 app.initializeDatabase = async () => {
   try {
     const connected = await testConnection();
     if (connected) {
       await initializeSchema();
-      await seedDemoUsers();
-      logger.info("Database initialization complete");
+      logger.info("Database schema initialized. Clean database ready.");
     }
     return connected;
   } catch (err) {
