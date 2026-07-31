@@ -143,9 +143,11 @@ const updateInterview = async (req, res) => {
     if (check.rowCount === 0) return res.status(404).json({ success: false, message: "Interview not found." });
 
     const updates = req.body;
+    const isApplicant = !isStaff(req.user);
+
     if (
-      !isStaff(req.user) &&
-      (check.rows[0].applicant_id !== req.user.id ||
+      isApplicant &&
+      (String(check.rows[0].applicant_id) !== String(req.user.id) ||
         !["accepted", "declined"].includes(updates.status) ||
         Object.keys(updates).some(k => k !== "status"))
     ) {
@@ -169,7 +171,34 @@ const updateInterview = async (req, res) => {
       `UPDATE interviews SET ${sets.join(", ")}, updated_at=NOW() WHERE id = $${idx} RETURNING *`,
       params
     );
-    return res.status(200).json({ success: true, message: "Interview updated successfully.", data: result.rows[0] });
+
+    // If applicant accepted or declined, notify HR staff asynchronously
+    if (isApplicant && ["accepted", "declined"].includes(updates.status)) {
+      (async () => {
+        try {
+          const hrRes = await pool.query("SELECT id FROM users WHERE LOWER(role) IN ('hr','admin') AND (status IS NULL OR LOWER(status)='active')");
+          for (const hr of hrRes.rows) {
+            await pool.query(
+              `INSERT INTO notifications (user_id, type, payload, is_read, created_at) VALUES ($1,$2,$3,false,NOW())`,
+              [
+                hr.id,
+                `interview_${updates.status}`,
+                JSON.stringify({
+                  interviewId: id,
+                  applicantName: req.user.name,
+                  status: updates.status,
+                  message: `${req.user.name} has ${updates.status} the interview invitation.`
+                })
+              ]
+            );
+          }
+        } catch (e) {
+          console.warn("[INTERVIEW] HR notification error:", e.message);
+        }
+      })();
+    }
+
+    return res.status(200).json({ success: true, message: `Interview ${updates.status || 'updated'} successfully.`, data: result.rows[0] });
   } catch (err) {
     console.error("[INTERVIEW CONTROLLER] update failed:", err.message);
     return res.status(500).json({ success: false, message: "Failed to update interview details." });

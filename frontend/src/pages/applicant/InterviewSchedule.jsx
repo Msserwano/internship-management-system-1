@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
@@ -8,6 +7,7 @@ import EmptyState from "../../components/ui/EmptyState";
 import Skeleton from "../../components/ui/Skeleton";
 import useApi from "../../hooks/useApi";
 import { interviewService } from "../../api/services";
+import { fDate } from "../../utils/formatters";
 import toast from "react-hot-toast";
 import {
   Calendar, MapPin, Clock, Users, Video, CheckCircle2, XCircle, FileText, ExternalLink
@@ -16,26 +16,33 @@ import {
 const InterviewSchedule = () => {
   const { data: interviews, loading, refetch } = useApi("/interviews");
   const [declineTarget, setDeclineTarget] = useState(null);
+  const [actionId, setActionId] = useState(null);
 
   const handleAccept = async (id) => {
+    setActionId(id);
     try {
       await interviewService.update(id, { status: "accepted" });
       toast.success("Interview invitation accepted! HR has been notified.");
       refetch();
-    } catch {
-      toast.error("Failed to accept invitation.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to accept invitation.");
+    } finally {
+      setActionId(null);
     }
   };
 
   const handleDecline = async () => {
     if (!declineTarget) return;
+    setActionId(declineTarget.id);
     try {
       await interviewService.update(declineTarget.id, { status: "declined" });
       toast.success("Interview invitation declined.");
       setDeclineTarget(null);
       refetch();
-    } catch {
-      toast.error("Failed to decline invitation.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to decline invitation.");
+    } finally {
+      setActionId(null);
     }
   };
 
@@ -58,117 +65,151 @@ const InterviewSchedule = () => {
 
       {interviews.length > 0 ? (
         <div className="space-y-6">
-          {interviews.map((ivw) => (
-            <motion.div
-              key={ivw.id}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="card p-6 md:p-8 space-y-6 border-l-4 border-l-primary-500"
-            >
-              {}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-700">
-                <div>
-                  <span className="badge badge-shortlisted text-xs mb-2">Interview Invitation</span>
-                  <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-                    {ivw.internshipTitle}
-                  </h2>
-                  <p className="text-xs text-primary-600 font-semibold">{ivw.department} Directorate</p>
+          {interviews.map((ivw) => {
+            const currentStatus = String(ivw.status || ivw.response || "scheduled").toLowerCase();
+            const isAccepted    = currentStatus === "accepted";
+            const isDeclined    = currentStatus === "declined";
+            const isPending     = !isAccepted && !isDeclined;
+
+            const dateVal  = ivw.interviewDate || ivw.interview_date || ivw.date;
+            const timeVal  = ivw.interviewTime || ivw.interview_time || ivw.time;
+            const linkVal  = ivw.meetingLink || ivw.meeting_link;
+            const panelArr = Array.isArray(ivw.panelMembers || ivw.panel_members)
+              ? (ivw.panelMembers || ivw.panel_members)
+              : (ivw.panelMembers || ivw.panel_members ? String(ivw.panelMembers || ivw.panel_members).split(",") : []);
+
+            return (
+              <motion.div
+                key={ivw.id}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`card p-6 md:p-8 space-y-6 border-l-4 ${
+                  isAccepted ? "border-l-green-500" : isDeclined ? "border-l-red-500" : "border-l-primary-500"
+                }`}
+              >
+                {/* Header / Title */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+                  <div>
+                    <span className="badge badge-shortlisted text-xs mb-2">Interview Invitation</span>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+                      {ivw.internshipTitle || "Internship Interview"}
+                    </h2>
+                    <p className="text-xs text-primary-600 font-semibold">{ivw.department || "KCCA Directorate"}</p>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div>
+                    {isAccepted ? (
+                      <span className="badge badge-accepted text-xs py-1.5 px-3 flex items-center gap-1.5 font-bold">
+                        <CheckCircle2 className="w-4 h-4 text-green-600" /> Invitation Accepted
+                      </span>
+                    ) : isDeclined ? (
+                      <span className="badge badge-rejected text-xs py-1.5 px-3 flex items-center gap-1.5 font-bold">
+                        <XCircle className="w-4 h-4 text-red-600" /> Invitation Declined
+                      </span>
+                    ) : (
+                      <span className="badge badge-under_review text-xs py-1.5 px-3 flex items-center gap-1.5 font-bold">
+                        <Clock className="w-4 h-4 text-yellow-600 animate-pulse" /> Action Required
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {}
-                {ivw.response === "accepted" ? (
-                  <span className="badge badge-accepted text-xs py-1 px-3">
-                    <CheckCircle2 className="w-4 h-4 mr-1 inline" /> Accepted
-                  </span>
-                ) : ivw.response === "declined" ? (
-                  <span className="badge badge-rejected text-xs py-1 px-3">
-                    <XCircle className="w-4 h-4 mr-1 inline" /> Declined
-                  </span>
-                ) : (
-                  <span className="badge badge-under_review text-xs py-1 px-3">
-                    Action Required
-                  </span>
-                )}
-              </div>
-
-              {}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-1">
-                  <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                    <Calendar className="w-4 h-4 text-primary-500" /> Date & Time
+                {/* Details Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                      <Calendar className="w-4 h-4 text-primary-500" /> Date &amp; Time
+                    </div>
+                    <p className="text-sm font-bold text-slate-800 dark:text-white">
+                      {fDate(dateVal)} {timeVal ? `at ${timeVal}` : ""}
+                    </p>
                   </div>
-                  <p className="text-sm font-bold text-slate-800 dark:text-white">
-                    {ivw.date} at {ivw.time}
-                  </p>
+
+                  <div className="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                      <MapPin className="w-4 h-4 text-primary-500" /> Venue / Location
+                    </div>
+                    <p className="text-sm font-bold text-slate-800 dark:text-white">
+                      {ivw.venue || "KCCA City Hall, Kampala"}
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                      <Video className="w-4 h-4 text-primary-500" /> Virtual Link
+                    </div>
+                    {linkVal ? (
+                      <a
+                        href={linkVal}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-primary-500 font-bold hover:underline inline-flex items-center gap-1 mt-1 truncate max-w-full"
+                      >
+                        Join Meeting <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                      </a>
+                    ) : (
+                      <p className="text-xs text-slate-400">Physical Interview Only</p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-1">
-                  <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                    <MapPin className="w-4 h-4 text-primary-500" /> Venue / Location
+                {/* Panel & Instructions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                  <div>
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1">
+                      <Users className="w-4 h-4 text-primary-500" /> Panel Members
+                    </h4>
+                    {panelArr.length > 0 ? (
+                      <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
+                        {panelArr.map((member, i) => (
+                          <li key={i} className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0" />
+                            {member.trim()}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">Panel assignment in progress.</p>
+                    )}
                   </div>
-                  <p className="text-sm font-bold text-slate-800 dark:text-white">
-                    {ivw.venue}
-                  </p>
+
+                  <div>
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1">
+                      <FileText className="w-4 h-4 text-primary-500" /> Special Instructions
+                    </h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-700/30 p-3 rounded-xl">
+                      {ivw.instructions || "Please arrive 15 minutes before the scheduled time with your National ID and academic documents."}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-1">
-                  <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                    <Video className="w-4 h-4 text-primary-500" /> Virtual Link
-                  </div>
-                  {ivw.meetingLink ? (
-                    <a
-                      href={ivw.meetingLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-primary-500 font-bold hover:underline inline-flex items-center gap-1 mt-1"
+                {/* Action Buttons */}
+                {isPending && (
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-danger hover:bg-red-50"
+                      onClick={() => setDeclineTarget(ivw)}
+                      loading={actionId === ivw.id}
                     >
-                      Join Google Meet <ExternalLink className="w-3 h-3" />
-                    </a>
-                  ) : (
-                    <p className="text-xs text-slate-400">Physical Interview Only</p>
-                  )}
-                </div>
-              </div>
-
-              {}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                <div>
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1">
-                    <Users className="w-4 h-4 text-primary-500" /> Panel Members
-                  </h4>
-                  <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
-                    {ivw.panelMembers?.map((member, i) => (
-                      <li key={i} className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
-                        {member}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1">
-                    <FileText className="w-4 h-4 text-primary-500" /> Special Instructions
-                  </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-700/30 p-3 rounded-xl">
-                    {ivw.instructions}
-                  </p>
-                </div>
-              </div>
-
-              {}
-              {!ivw.response && (
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
-                  <Button variant="ghost" size="sm" className="text-danger" onClick={() => setDeclineTarget(ivw)}>
-                    Decline Invitation
-                  </Button>
-                  <Button variant="accent" size="sm" onClick={() => handleAccept(ivw.id)} icon={CheckCircle2}>
-                    Accept Invitation
-                  </Button>
-                </div>
-              )}
-            </motion.div>
-          ))}
+                      Decline Invitation
+                    </Button>
+                    <Button
+                      variant="accent"
+                      size="sm"
+                      onClick={() => handleAccept(ivw.id)}
+                      loading={actionId === ivw.id}
+                      icon={CheckCircle2}
+                    >
+                      Accept &amp; Confirm Interview
+                    </Button>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
       ) : (
         <EmptyState
@@ -178,13 +219,12 @@ const InterviewSchedule = () => {
         />
       )}
 
-      {}
       <ConfirmDialog
         open={!!declineTarget}
         onClose={() => setDeclineTarget(null)}
         onConfirm={handleDecline}
         title="Decline Interview Invitation"
-        message="Are you sure you want to decline this interview? This will notify KCCA HR team."
+        message="Are you sure you want to decline this interview? KCCA HR team will be notified."
         confirmLabel="Yes, Decline"
         danger
       />
