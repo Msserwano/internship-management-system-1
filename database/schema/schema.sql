@@ -179,6 +179,7 @@ CREATE TABLE IF NOT EXISTS interviews (
     interview_time  TIME,
     venue           VARCHAR(255) NOT NULL,
     meeting_link    VARCHAR(500),
+    panel_members   TEXT[],
     instructions    TEXT,
     status          VARCHAR(30)  NOT NULL DEFAULT 'scheduled',  -- scheduled|accepted|declined|completed|cancelled
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),

@@ -51,10 +51,31 @@ const Profile = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
-    updateProfile(formData);
-    toast.success("Profile updated successfully!");
-    setLoading(false);
+    try {
+      import("../../api/axios").then(async ({ default: api }) => {
+        try {
+          const res = await api.put("/applicants/profile", {
+            name: formData.name,
+            phone: formData.phone,
+            institution: formData.university,
+            course: formData.course,
+            academic_year_level: formData.yearOfStudy,
+          });
+          updateProfile({ ...formData, ...res.data?.data });
+          toast.success("Profile updated successfully!");
+        } catch (err) {
+          // If the backend update fails, still update local context
+          updateProfile(formData);
+          toast.success("Profile saved locally.");
+        } finally {
+          setLoading(false);
+        }
+      });
+    } catch {
+      updateProfile(formData);
+      toast.success("Profile saved locally.");
+      setLoading(false);
+    }
   };
 
   return (

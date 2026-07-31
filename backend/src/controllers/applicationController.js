@@ -283,7 +283,7 @@ const assignApplication = async (req, res) => {
     const { hrId } = req.body;
     if (!hrId) return res.status(400).json({ success: false, message: "hrId is required." });
 
-    const client = await pool.connect();
+    const client = await pool().connect();
     try {
       await client.query("BEGIN");
 

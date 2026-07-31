@@ -31,7 +31,6 @@ const HRApplications = () => {
   const [deptFilter, setDeptFilter]   = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [uniFilter, setUniFilter]     = useState("");
-  const [genderFilter, setGenderFilter] = useState("");
 
   const filteredApps = useMemo(() => {
     return apps.filter((app) => {
@@ -41,10 +40,9 @@ const HRApplications = () => {
       const matchDept   = !deptFilter   || app.department === deptFilter;
       const matchStatus = !statusFilter || app.status === statusFilter;
       const matchUni    = !uniFilter    || app.university === uniFilter;
-      const matchGender = !genderFilter || app.gender === genderFilter;
-      return matchSearch && matchDept && matchStatus && matchUni && matchGender;
+      return matchSearch && matchDept && matchStatus && matchUni;
     });
-  }, [apps, search, deptFilter, statusFilter, uniFilter, genderFilter]);
+  }, [apps, search, deptFilter, statusFilter, uniFilter]);
 
   const toggleSelectAll = (e) => {
     if (e.target.checked) setSelectedIds(filteredApps.map((a) => a.id));
@@ -151,12 +149,6 @@ const HRApplications = () => {
             value={uniFilter}
             onChange={(e) => setUniFilter(e.target.value)}
             options={["Makerere University", "Kyambogo University", "Uganda Christian University", "MUST", "MUBS"]}
-          />
-          <Select
-            placeholder="All Genders"
-            value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value)}
-            options={["Female", "Male"]}
           />
         </div>
 

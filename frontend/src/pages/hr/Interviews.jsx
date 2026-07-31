@@ -108,10 +108,10 @@ const HRInterviews = () => {
               </div>
               <p className="text-xs text-slate-500">
                 <Clock className="w-3.5 h-3.5 inline text-slate-400 mr-1"/>
-                {ivw.date} at {ivw.time} • <MapPin className="w-3.5 h-3.5 inline text-slate-400 mx-1"/> {ivw.venue}
+                {ivw.interviewDate || ivw.interview_date} at {ivw.interviewTime || ivw.interview_time} • <MapPin className="w-3.5 h-3.5 inline text-slate-400 mx-1"/> {ivw.venue}
               </p>
               <p className="text-xs text-slate-400">
-                Panel: <strong className="text-slate-600 dark:text-slate-300">{Array.isArray(ivw.panelMembers) ? ivw.panelMembers.join(", ") : ivw.panelMembers}</strong>
+                Panel: <strong className="text-slate-600 dark:text-slate-300">{Array.isArray(ivw.panelMembers || ivw.panel_members) ? (ivw.panelMembers || ivw.panel_members).join(", ") : (ivw.panelMembers || ivw.panel_members || '—')}</strong>
               </p>
             </div>
 

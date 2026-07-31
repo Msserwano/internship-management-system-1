@@ -42,33 +42,33 @@ const ApplyWizard = () => {
 
   const [formData, setFormData] = useState({
 
-    fullName: user?.name || "Sarah Nakimuli",
-    email: user?.email || "applicant@kcca.go.ug",
-    phone: user?.phone || "+256 701 234 567",
+    fullName: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
     gender: user?.gender || "Female",
-    dob: user?.dob || "2001-03-14",
-    district: user?.district || "Kampala",
-    nin: "CM010203040506",
+    dob: user?.dob || "",
+    district: user?.district || "",
+    nin: "",
 
 
     qualification: "Bachelor's Degree",
-    course: user?.course || "Computer Science",
+    course: user?.course || "",
     yearOfStudy: user?.yearOfStudy || "3rd Year",
-    gpa: user?.gpa || "4.2",
+    gpa: user?.gpa || "",
 
 
-    university: user?.university || "Makerere University",
-    studentId: user?.studentId || "16/U/0001/PS",
-    headOfDept: "Dr. Florence Tushabe",
-    universityEmail: "info@mak.ac.ug",
+    university: user?.university || "",
+    studentId: user?.studentId || "",
+    headOfDept: "",
+    universityEmail: "",
 
 
-    nationalIdDoc: "national_id.pdf",
-    recommendationDoc: "recommendation_letter.pdf",
-    transcriptDoc: "academic_transcript.pdf",
-    cvDoc: "cv_sarah.pdf",
-    coverLetterDoc: "cover_letter.pdf",
-    photoDoc: "passport_photo.jpg",
+    nationalIdDoc: "",
+    recommendationDoc: "",
+    transcriptDoc: "",
+    cvDoc: "",
+    coverLetterDoc: "",
+    photoDoc: "",
   });
 
   const handleChange = (field, value) => {
