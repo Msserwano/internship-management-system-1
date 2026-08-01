@@ -50,7 +50,8 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
   const { user, logout } = useAuth();
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
-  const nav = NAV_MAP[user?.role] || APPLICANT_NAV;
+  const userRole = user?.role ? String(user.role).toLowerCase() : "applicant";
+  const nav = NAV_MAP[userRole] || APPLICANT_NAV;
 
   const handleLogout = () => { logout(); navigate("/login"); };
 

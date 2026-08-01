@@ -11,7 +11,11 @@ export function AuthProvider({ children }) {
     const stored = localStorage.getItem("kcca_user");
     if (stored) {
       try {
-        setUser(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.role) {
+          parsed.role = String(parsed.role).toLowerCase();
+        }
+        setUser(parsed);
       } catch {
         localStorage.removeItem("kcca_user");
         localStorage.removeItem("kcca_token");
@@ -25,6 +29,9 @@ export function AuthProvider({ children }) {
     try {
       const res = await api.post("/auth/login", { email: normalizedEmail, password });
       const { token, user: backendUser } = res.data;
+      if (backendUser && backendUser.role) {
+        backendUser.role = String(backendUser.role).toLowerCase();
+      }
       localStorage.setItem("kcca_token", token);
       localStorage.setItem("kcca_user", JSON.stringify(backendUser));
       setUser(backendUser);

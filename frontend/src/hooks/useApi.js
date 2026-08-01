@@ -15,10 +15,18 @@ const useApi = (url, deps = []) => {
     setError(null);
     try {
       const res = await api.get(url);
-      setData(res.data?.data ?? res.data);
+      const resData = res.data?.data ?? res.data;
+      if (Array.isArray(resData)) {
+        setData(resData);
+      } else if (resData && typeof resData === "object" && !resData.message) {
+        setData(resData);
+      } else {
+        setData([]);
+      }
     } catch (err) {
       console.error(`[useApi] ${url}`, err);
       setError(err.response?.data?.message || "Failed to load data.");
+      setData([]);
     } finally {
       if (!isSilent) setLoading(false);
     }

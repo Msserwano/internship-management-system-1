@@ -46,9 +46,12 @@ import AdminNotifications  from "../pages/admin/Notifications";
 // ---------------------------------------------------------------------------
 // Role-based redirect helper
 // ---------------------------------------------------------------------------
+// Role-based redirect helper
+// ---------------------------------------------------------------------------
 const roleDashboard = (role) => {
+  const normRole = role ? String(role).toLowerCase() : "";
   const map = { applicant: "/applicant/dashboard", hr: "/hr/dashboard", admin: "/admin/dashboard" };
-  return map[role] || "/login";
+  return map[normRole] || "/login";
 };
 
 // ---------------------------------------------------------------------------
@@ -67,8 +70,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to={roleDashboard(user.role)} replace />;
+  const userRole = user.role ? String(user.role).toLowerCase() : "";
+  if (allowedRoles && !allowedRoles.map(r => r.toLowerCase()).includes(userRole)) {
+    return <Navigate to={roleDashboard(userRole)} replace />;
   }
 
   return children;
@@ -80,7 +84,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (user) return <Navigate to={roleDashboard(user.role)} replace />;
+  if (user) {
+    const target = roleDashboard(user.role);
+    if (target !== "/login") {
+      return <Navigate to={target} replace />;
+    }
+  }
   return children;
 };
 

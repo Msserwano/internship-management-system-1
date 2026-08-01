@@ -30,8 +30,10 @@ const Navbar = ({ collapsed, setMobileOpen }) => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const userRole = user?.role ? String(user.role).toLowerCase() : "applicant";
   const roleLabels = { applicant:"Applicant", hr:"HR Officer", admin:"System Admin", supervisor:"Supervisor" };
-  const rolePrefix = { applicant:"/applicant", hr:"/hr", admin:"/admin", supervisor:"/supervisor" };
+  const rolePrefix = { applicant:"/applicant", hr:"/hr", admin:"/admin", supervisor:"/applicant" };
+  const currentPrefix = rolePrefix[userRole] || "/applicant";
 
   return (
     <header
@@ -102,7 +104,7 @@ const Navbar = ({ collapsed, setMobileOpen }) => {
                   })}
                 </div>
                 <div className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-700 text-center">
-                  <Link to={`${rolePrefix[user?.role]}/notifications`} onClick={() => setNotifOpen(false)} className="text-xs text-primary-500 hover:underline">
+                  <Link to={`${currentPrefix}/notifications`} onClick={() => setNotifOpen(false)} className="text-xs text-primary-500 hover:underline">
                     View all notifications
                   </Link>
                 </div>
@@ -111,7 +113,7 @@ const Navbar = ({ collapsed, setMobileOpen }) => {
           </AnimatePresence>
         </div>
 
-        {}
+        {/* User Menu */}
         <div ref={userRef} className="relative">
           <button
             onClick={() => { setUserOpen(!userOpen); setNotifOpen(false); }}
@@ -120,7 +122,7 @@ const Navbar = ({ collapsed, setMobileOpen }) => {
             <Avatar name={user?.name} size="sm" />
             <div className="hidden sm:block text-left">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-tight">{user?.name}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{roleLabels[user?.role]}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{roleLabels[userRole] || "User"}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" />
           </button>
@@ -135,11 +137,11 @@ const Navbar = ({ collapsed, setMobileOpen }) => {
                   <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
                 </div>
                 <div className="py-1">
-                  <Link to={`${rolePrefix[user?.role]}/profile`} onClick={() => setUserOpen(false)}
+                  <Link to={`${currentPrefix}/profile`} onClick={() => setUserOpen(false)}
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
                     <User className="w-4 h-4" /> My Profile
                   </Link>
-                  <Link to={`${rolePrefix[user?.role]}/settings`} onClick={() => setUserOpen(false)}
+                  <Link to={`${currentPrefix}/settings`} onClick={() => setUserOpen(false)}
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
                     <Settings className="w-4 h-4" /> Settings
                   </Link>

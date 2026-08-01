@@ -19,8 +19,9 @@ const LoginPage = () => {
       const user = await login(data.email, data.password);
       const displayName = user.firstName || user.name?.split(" ")[0] || "there";
       toast.success(`Welcome back, ${displayName}!`);
+      const userRole = user?.role ? String(user.role).toLowerCase() : "applicant";
       const redirects = { applicant:"/applicant/dashboard", hr:"/hr/dashboard", admin:"/admin/dashboard" };
-      navigate(redirects[user.role] || "/applicant/dashboard");
+      navigate(redirects[userRole] || "/applicant/dashboard");
     } catch (err) {
       toast.error(err.message || "Login failed. Please check your credentials.");
     } finally {
