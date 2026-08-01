@@ -229,14 +229,23 @@ const HRApplications = () => {
                         Review
                       </Button>
                       <Button
-                        variant="accent"
+                        variant="outline"
                         size="xs"
                         onClick={() => handleUpdateSingle(app.id, "shortlisted")}
                         icon={CheckCircle2}
-                        className="!bg-emerald-600 hover:!bg-emerald-700 !text-white"
                         title="Shortlist Applicant"
                       >
                         Shortlist
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="xs"
+                        onClick={() => handleUpdateSingle(app.id, "accepted")}
+                        icon={UserCheck}
+                        className="!bg-emerald-600 hover:!bg-emerald-700 !text-white font-bold"
+                        title="Accept & Offer Placement"
+                      >
+                        Accept &amp; Offer
                       </Button>
                       <Button
                         variant="danger"
@@ -364,14 +373,17 @@ const HRApplications = () => {
 
             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
               <Button variant="ghost" size="sm" onClick={() => setSelectedApp(null)}>Close</Button>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="danger" size="sm" onClick={() => handleUpdateSingle(selectedApp.id, "rejected")}>
                   Reject Application
                 </Button>
-                <Button variant="accent" size="sm" onClick={() => handleUpdateSingle(selectedApp.id, "shortlisted")}>
+                <Button variant="outline" size="sm" onClick={() => handleUpdateSingle(selectedApp.id, "shortlisted")}>
                   Shortlist Candidate
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleAssignToMe(selectedApp)}>
+                <Button variant="primary" size="sm" className="!bg-emerald-600 hover:!bg-emerald-700 !text-white font-bold" onClick={() => handleUpdateSingle(selectedApp.id, "accepted")}>
+                  Accept &amp; Offer Placement
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleAssignToMe(selectedApp)}>
                   Assign To Me
                 </Button>
               </div>

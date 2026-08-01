@@ -6,6 +6,7 @@ const isStaff = (user) => ["hr", "admin"].includes(String(user?.role).toLowerCas
 const interviewSelect = `
   SELECT
     iv.*,
+    iv.application_id      AS "applicationId",
     iv.interview_date      AS "interviewDate",
     iv.interview_time      AS "interviewTime",
     iv.meeting_link        AS "meetingLink",
