@@ -72,11 +72,13 @@ const HRApplications = () => {
   const handleUpdateSingle = async (id, status) => {
     try {
       await applicationService.update(id, { status, reviewNote });
-      toast.success(`Application ${status}.`);
+      toast.success(`Application status updated to ${status}.`);
       setSelectedApp(null);
+      setReviewNote("");
       refetch();
-    } catch {
-      toast.error("Failed to update application.");
+    } catch (err) {
+      console.error("[HR EDIT] Failed to update application:", err);
+      toast.error("Failed to update application status.");
     }
   };
 
@@ -222,9 +224,30 @@ const HRApplications = () => {
                   </td>
                   <td className="text-xs text-slate-400">{fDate(app.submittedAt)}</td>
                   <td>
-                    <Button variant="ghost" size="xs" onClick={() => setSelectedApp(app)} icon={Eye}>
-                      Review
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="ghost" size="xs" onClick={() => setSelectedApp(app)} icon={Eye} title="Review Details">
+                        Review
+                      </Button>
+                      <Button
+                        variant="accent"
+                        size="xs"
+                        onClick={() => handleUpdateSingle(app.id, "shortlisted")}
+                        icon={CheckCircle2}
+                        className="!bg-emerald-600 hover:!bg-emerald-700 !text-white"
+                        title="Shortlist Applicant"
+                      >
+                        Shortlist
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="xs"
+                        onClick={() => handleUpdateSingle(app.id, "rejected")}
+                        icon={XCircle}
+                        title="Reject Application"
+                      >
+                        Reject
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

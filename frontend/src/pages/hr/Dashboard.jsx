@@ -160,6 +160,7 @@ const HRDashboard = () => {
                 <th>GPA</th>
                 <th>Status</th>
                 <th>Submitted</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -172,6 +173,13 @@ const HRDashboard = () => {
                   <td><span className="font-semibold text-primary-600">{app.gpa}</span></td>
                   <td><Badge status={app.status} /></td>
                   <td className="text-xs text-slate-400">{fDate(app.submitted_at || app.submittedAt)}</td>
+                  <td>
+                    <Link to="/hr/applications">
+                      <Button variant="outline" size="xs" icon={ArrowRight}>
+                        Process
+                      </Button>
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
