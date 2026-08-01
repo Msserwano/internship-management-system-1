@@ -16,7 +16,8 @@ import { KCCA_DEPARTMENTS } from "../../utils/constants";
 import { fDate } from "../../utils/formatters";
 import toast from "react-hot-toast";
 import {
-  Search, Download, CheckCircle2, XCircle, UserCheck, Eye, FileSpreadsheet, FileText
+  Search, Download, CheckCircle2, XCircle, UserCheck, Eye, FileSpreadsheet, FileText,
+  AlertCircle, FileCode, ExternalLink, Paperclip
 } from "lucide-react";
 
 const HRApplications = () => {
@@ -25,6 +26,7 @@ const HRApplications = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
   const [reviewNote, setReviewNote]   = useState("");
+  const [docPreview,  setDocPreview]  = useState(null); // { title, filename, dataUrl }
 
 
   const [search, setSearch]           = useState("");
@@ -286,80 +288,122 @@ const HRApplications = () => {
             </div>
 
             {/* Submitted Applicant Documents */}
-            <div className="space-y-3 p-4 bg-primary-50/50 dark:bg-slate-800/80 rounded-2xl border border-primary-100 dark:border-slate-700">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary-600" />
-                  Submitted Applicant Documents
-                </h4>
-                <span className="text-[11px] font-medium text-slate-500">
-                  {selectedApp.documents ? Object.keys(selectedApp.documents).length : 0} Document(s) Attached
-                </span>
-              </div>
+            {(() => {
+              const DOC_LABELS = {
+                recommendationDoc: "Recommendation Letter",
+                transcriptDoc:     "Academic Transcript",
+                cvDoc:             "Curriculum Vitae (CV)",
+                coverLetterDoc:    "Cover Letter",
+                photoDoc:          "Passport Photo",
+              };
+              const REQUIRED = Object.keys(DOC_LABELS);
+              let rawDocs = selectedApp.documents;
+              if (typeof rawDocs === "string") {
+                try { rawDocs = JSON.parse(rawDocs); } catch { rawDocs = null; }
+              }
+              const hasDocs = rawDocs && typeof rawDocs === "object" && Object.keys(rawDocs).length > 0;
+              const uploadedCount = hasDocs ? Object.values(rawDocs).filter(Boolean).length : 0;
 
-              {selectedApp.documents && Object.keys(selectedApp.documents).length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {Object.entries(selectedApp.documents).map(([key, doc]) => {
-                    if (!doc) return null;
-                    const docName = typeof doc === "object" ? doc.name : String(doc);
-                    const docSize = typeof doc === "object" ? doc.size : "";
-                    const dataUrl = typeof doc === "object" ? doc.data : null;
-                    const labelMap = {
-                      nationalIdDoc: "National ID / Passport",
-                      recommendationDoc: "Recommendation Letter",
-                      transcriptDoc: "Academic Transcript",
-                      cvDoc: "Curriculum Vitae (CV)",
-                      coverLetterDoc: "Cover Letter",
-                      photoDoc: "Passport Photo",
-                    };
-                    const title = labelMap[key] || key.replace(/([A-Z])/g, " $1");
+              return (
+                <div className="space-y-3 p-4 bg-primary-50/50 dark:bg-slate-800/80 rounded-2xl border border-primary-100 dark:border-slate-700">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <Paperclip className="w-4 h-4 text-primary-600" />
+                      Submitted Documents
+                    </h4>
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                      uploadedCount === REQUIRED.length
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                    }`}>
+                      {uploadedCount}/{REQUIRED.length} docs
+                    </span>
+                  </div>
 
-                    return (
-                      <div
-                        key={key}
-                        className="p-3 bg-white dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 flex items-center justify-between gap-2 text-xs"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold text-slate-800 dark:text-white truncate">{title}</p>
-                          <p className="text-[11px] text-slate-400 truncate">{docName} {docSize ? `• ${docSize}` : ""}</p>
+                  {/* Required doc checklist */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {REQUIRED.map((key) => {
+                      const doc      = hasDocs ? rawDocs[key] : null;
+                      const uploaded = !!doc;
+                      const label    = DOC_LABELS[key];
+                      return (
+                        <div key={key} className={`flex items-center gap-1.5 p-2 rounded-lg text-[11px] font-medium ${
+                          uploaded
+                            ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
+                            : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                        }`}>
+                          {uploaded
+                            ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                            : <AlertCircle  className="w-3.5 h-3.5 flex-shrink-0" />}
+                          <span className="truncate">{label}</span>
                         </div>
-                        <Button
-                          variant="primary"
-                          size="xs"
-                          icon={Eye}
-                          onClick={() => {
-                            if (dataUrl) {
-                              const w = window.open("");
-                              if (w) {
-                                w.document.write(`
-                                  <html>
-                                    <head><title>${title} - ${docName}</title></head>
-                                    <body style="margin:0; background:#0f172a; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh;">
-                                      <h3 style="color:#fff; font-family:sans-serif; margin:12px 0;">${title}: ${docName}</h3>
-                                      <iframe src="${dataUrl}" style="width:92%; height:88%; border:none; background:#fff; border-radius:8px;"></iframe>
-                                    </body>
-                                  </html>
-                                `);
-                              } else {
-                                toast.error("Pop-up blocked. Please allow popups to view document.");
-                              }
-                            } else {
-                              toast.success(`Opening ${docName}...`);
-                            }
-                          }}
-                        >
-                          View
-                        </Button>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+
+                  {/* Document rows with view/download */}
+                  {hasDocs ? (
+                    <div className="space-y-2 mt-1">
+                      {Object.entries(rawDocs).map(([key, doc]) => {
+                        if (!doc) return null;
+                        const docName  = typeof doc === "object" ? doc.name  : String(doc);
+                        const docSize  = typeof doc === "object" ? doc.size  : "";
+                        const dataUrl  = typeof doc === "object" ? doc.data  : null;
+                        const docType  = typeof doc === "object" ? doc.type  : "";
+                        const isImage  = docType?.startsWith("image") || /\.(png|jpg|jpeg|gif|webp)$/i.test(docName);
+                        const title    = DOC_LABELS[key] || key.replace(/([A-Z])/g, " $1");
+
+                        const handleView = () => {
+                          if (dataUrl) {
+                            setDocPreview({ title, filename: docName, dataUrl, isImage });
+                          } else {
+                            toast.info("Document data not available for preview.");
+                          }
+                        };
+
+                        const handleDownload = () => {
+                          if (dataUrl) {
+                            const a = document.createElement("a");
+                            a.href = dataUrl;
+                            a.download = docName;
+                            a.click();
+                          } else {
+                            toast.success(`Downloading ${docName}...`);
+                          }
+                        };
+
+                        return (
+                          <div
+                            key={key}
+                            className="p-3 bg-white dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 flex items-center gap-3 text-xs"
+                          >
+                            <div className="w-8 h-8 bg-primary-50 dark:bg-primary-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                              {isImage
+                                ? <img src={dataUrl} alt={title} className="w-8 h-8 object-cover rounded-lg" />
+                                : <FileText className="w-4 h-4 text-primary-500" />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-slate-800 dark:text-white truncate">{title}</p>
+                              <p className="text-[10px] text-slate-400 truncate">{docName}{docSize ? ` • ${docSize}` : ""}</p>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button variant="outline" size="xs" icon={Eye}      onClick={handleView}    title="Preview document">View</Button>
+                              <Button variant="ghost"   size="xs" icon={Download} onClick={handleDownload} title="Download document" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-slate-100 dark:bg-slate-700/50 rounded-xl text-center text-xs text-slate-500">
+                      <FileCode className="w-6 h-6 text-slate-400 mx-auto mb-1" />
+                      No documents were attached with this application.
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl text-center text-xs text-slate-500">
-                  📄 Standard document package attached (CV, Academic Transcripts, Recommendation Letter).
-                </div>
-              )}
-            </div>
+              );
+            })()}
 
             <div className="space-y-2">
               <label className="form-label">HR Evaluation Notes</label>
@@ -388,6 +432,46 @@ const HRApplications = () => {
                   Assign To Me
                 </Button>
               </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Document Full Preview Modal */}
+      {docPreview && (
+        <Modal open={!!docPreview} onClose={() => setDocPreview(null)} title={docPreview.title} size="xl">
+          <div className="p-6 space-y-4">
+            <p className="text-xs text-slate-500 text-center">{docPreview.filename}</p>
+
+            {docPreview.isImage ? (
+              <img
+                src={docPreview.dataUrl}
+                alt={docPreview.title}
+                className="max-h-[70vh] w-full object-contain rounded-xl border border-slate-200 dark:border-slate-700"
+              />
+            ) : (
+              <iframe
+                src={docPreview.dataUrl}
+                title={docPreview.title}
+                className="w-full h-[70vh] rounded-xl border border-slate-200 dark:border-slate-700 bg-white"
+              />
+            )}
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+              <Button variant="ghost" size="sm" onClick={() => setDocPreview(null)}>Close</Button>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={Download}
+                onClick={() => {
+                  const a = document.createElement("a");
+                  a.href = docPreview.dataUrl;
+                  a.download = docPreview.filename;
+                  a.click();
+                }}
+              >
+                Download
+              </Button>
             </div>
           </div>
         </Modal>
