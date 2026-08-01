@@ -34,6 +34,9 @@ const HRInterviews = () => {
 
   const handleSchedule = async (e) => {
     e.preventDefault();
+    if (!formData.applicationId) {
+      return toast.error("Please select a candidate application from the dropdown.");
+    }
     try {
       await interviewService.schedule({
         applicationId:   formData.applicationId,
@@ -45,13 +48,26 @@ const HRInterviews = () => {
         venue:           formData.venue,
         meetingLink:     formData.meetingLink,
         instructions:    formData.instructions,
-        panelMembers:    formData.panelMembers.split(","),
+        panelMembers:    formData.panelMembers ? formData.panelMembers.split(",") : [],
       });
-      toast.success("Interview scheduled! Email & SMS notifications dispatched.");
+      toast.success("Interview scheduled & confirmed! Notifications dispatched.");
       setModalOpen(false);
       refetch();
-    } catch {
-      toast.error("Failed to schedule interview.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to schedule interview.");
+    }
+  };
+
+  const handleUpdateInterviewStatus = async (ivwId, status) => {
+    setActionId(ivwId);
+    try {
+      await interviewService.update(ivwId, { status });
+      toast.success(`Interview marked as ${status.toUpperCase()}.`);
+      refetch();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update interview status.");
+    } finally {
+      setActionId(null);
     }
   };
 
@@ -168,8 +184,21 @@ const HRInterviews = () => {
                   </p>
                 </div>
 
-                {/* Actions: Re-send invite or Accept Candidate */}
+                {/* Actions: Confirm Interview, Resend Invite, Accept & Offer Placement */}
                 <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+                  {statusVal !== "completed" && statusVal !== "accepted" && (
+                    <Button
+                      variant="accent"
+                      size="xs"
+                      onClick={() => handleUpdateInterviewStatus(ivw.id, "completed")}
+                      loading={actionId === ivw.id}
+                      icon={CheckCircle2}
+                      className="!bg-emerald-600 hover:!bg-emerald-700 !text-white"
+                    >
+                      Confirm / Complete
+                    </Button>
+                  )}
+
                   <Button variant="outline" size="xs" onClick={() => toast.success("Invitation re-sent via Email & SMS.")} icon={Mail}>
                     Resend Invite
                   </Button>

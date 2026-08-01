@@ -154,14 +154,27 @@ const updateInterview = async (req, res) => {
       return res.status(403).json({ success: false, message: "Applicants may only accept or decline their own interview." });
     }
 
-    const allowed = ["interview_date", "interview_time", "venue", "meeting_link", "status", "instructions", "panel_members"];
+    const fieldMap = {
+      interviewDate: "interview_date",
+      interview_date: "interview_date",
+      interviewTime: "interview_time",
+      interview_time: "interview_time",
+      meetingLink: "meeting_link",
+      meeting_link: "meeting_link",
+      panelMembers: "panel_members",
+      panel_members: "panel_members",
+      instructions: "instructions",
+      venue: "venue",
+      status: "status",
+    };
     const sets = [];
     const params = [];
     let idx = 1;
-    for (const k of Object.keys(updates)) {
-      if (!allowed.includes(k)) continue;
-      params.push(updates[k]);
-      sets.push(`${k} = $${idx}`);
+    for (const [k, val] of Object.entries(updates)) {
+      const col = fieldMap[k];
+      if (!col) continue;
+      params.push(col === "panel_members" && Array.isArray(val) ? val : val);
+      sets.push(`${col} = $${idx}`);
       idx++;
     }
     if (sets.length === 0) return res.status(400).json({ success: false, message: "No valid fields to update." });
