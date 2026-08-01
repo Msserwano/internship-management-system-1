@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
@@ -14,6 +13,7 @@ import { applicationService } from "../../api/services";
 import { useAuth } from "../../context/AuthContext";
 import { KCCA_DEPARTMENTS } from "../../utils/constants";
 import { fDate } from "../../utils/formatters";
+import { exportApplicationsToPDF, exportApplicationsToExcel } from "../../utils/exportApplications";
 import toast from "react-hot-toast";
 import {
   Search, Download, CheckCircle2, XCircle, UserCheck, Eye, FileSpreadsheet, FileText,
@@ -26,7 +26,8 @@ const HRApplications = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
   const [reviewNote, setReviewNote]   = useState("");
-  const [docPreview,  setDocPreview]  = useState(null); // { title, filename, dataUrl }
+  const [docPreview,  setDocPreview]  = useState(null);
+  const [exporting,   setExporting]   = useState(false);
 
 
   const [search, setSearch]           = useState("");
@@ -96,8 +97,49 @@ const HRApplications = () => {
     }
   };
 
-  const handleExportPDF   = () => toast.success("Downloading Applications Report (PDF)...");
-  const handleExportExcel = () => toast.success("Downloading Applications Spreadsheet (Excel)...");
+  const handleExportPDF = async () => {
+    if (filteredApps.length === 0) {
+      toast.error("No applications to export.");
+      return;
+    }
+    setExporting(true);
+    const toastId = toast.loading(`Generating PDF for ${filteredApps.length} application(s)...`);
+    try {
+      const filename = await exportApplicationsToPDF(filteredApps, {
+        status: statusFilter,
+        dept:   deptFilter,
+        search,
+      });
+      toast.success(`PDF downloaded: ${filename}`, { id: toastId });
+    } catch (err) {
+      console.error("PDF export failed:", err);
+      toast.error("Failed to generate PDF. Please try again.", { id: toastId });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (filteredApps.length === 0) {
+      toast.error("No applications to export.");
+      return;
+    }
+    setExporting(true);
+    const toastId = toast.loading(`Generating Excel for ${filteredApps.length} application(s)...`);
+    try {
+      const filename = await exportApplicationsToExcel(filteredApps, {
+        status: statusFilter,
+        dept:   deptFilter,
+        search,
+      });
+      toast.success(`Excel downloaded: ${filename}`, { id: toastId });
+    } catch (err) {
+      console.error("Excel export failed:", err);
+      toast.error("Failed to generate Excel file. Please try again.", { id: toastId });
+    } finally {
+      setExporting(false);
+    }
+  };
 
 
   if (loading) return (
@@ -119,10 +161,22 @@ const HRApplications = () => {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportPDF} icon={FileText}>
+          <Button
+            variant="outline" size="sm"
+            onClick={handleExportPDF}
+            icon={FileText}
+            loading={exporting}
+            disabled={exporting}
+          >
             Export PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportExcel} icon={FileSpreadsheet}>
+          <Button
+            variant="outline" size="sm"
+            onClick={handleExportExcel}
+            icon={FileSpreadsheet}
+            loading={exporting}
+            disabled={exporting}
+          >
             Export Excel
           </Button>
         </div>
