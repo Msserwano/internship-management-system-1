@@ -179,7 +179,7 @@ const InterviewSchedule = () => {
                       <FileText className="w-4 h-4 text-primary-500" /> Special Instructions
                     </h4>
                     <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-700/30 p-3 rounded-xl">
-                      {ivw.instructions || "Please arrive 15 minutes before the scheduled time with your National ID and academic documents."}
+                      {ivw.instructions || "Please arrive 15 minutes before the scheduled time with your School ID and academic documents."}
                     </p>
                   </div>
                 </div>
