@@ -15,8 +15,9 @@ import { fDate, fDeadline } from "../../utils/formatters";
 import { Search, Filter, Briefcase, MapPin, Clock, Users, ArrowRight, X, Calendar } from "lucide-react";
 
 const AvailableInternships = () => {
-  const { data: internships, loading } = useApi("/internships");
+  const { data: rawInternships, loading } = useApi("/internships");
   const { data: myApplications } = useApi("/applications");
+  const internships = Array.isArray(rawInternships) ? rawInternships : [];
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
   const [durationFilter, setDurationFilter] = useState("");

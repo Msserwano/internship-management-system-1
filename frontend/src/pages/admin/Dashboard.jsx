@@ -14,12 +14,17 @@ import {
 import toast from "react-hot-toast";
 
 const AdminDashboard = () => {
-  const { data: users,        loading: loadingUsers }  = useApi("/users");
-  const { data: applicants,   loading: loadingApps  }  = useApi("/applicants");
-  const { data: departments,  loading: loadingDepts }  = useApi("/data/departments");
-  const { data: applications, loading: loadingAppl }   = useApi("/applications");
+  const { data: rawUsers,        loading: loadingUsers }  = useApi("/users");
+  const { data: rawApplicants,   loading: loadingApps  }  = useApi("/applicants");
+  const { data: rawDepartments,  loading: loadingDepts }  = useApi("/data/departments");
+  const { data: rawApplications, loading: loadingAppl }   = useApi("/applications");
   const [auditLogs, setAuditLogs] = useState([]);
   const [loadingAudit, setLoadingAudit] = useState(true);
+
+  const users        = Array.isArray(rawUsers)        ? rawUsers        : [];
+  const applicants   = Array.isArray(rawApplicants)   ? rawApplicants   : [];
+  const departments  = Array.isArray(rawDepartments)  ? rawDepartments  : [];
+  const applications = Array.isArray(rawApplications) ? rawApplications : [];
 
   useEffect(() => {
     auditService.list({ limit: 8 })

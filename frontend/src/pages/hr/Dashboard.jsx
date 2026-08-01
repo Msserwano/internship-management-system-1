@@ -17,8 +17,11 @@ import {
 } from "lucide-react";
 
 const HRDashboard = () => {
-  const { data: applications, loading: loadingApps } = useApi("/applications");
-  const { data: internships, loading: loadingJobs }  = useApi("/internships");
+  const { data: rawApplications, loading: loadingApps } = useApi("/applications");
+  const { data: rawInternships,  loading: loadingJobs }  = useApi("/internships");
+
+  const applications = Array.isArray(rawApplications) ? rawApplications : [];
+  const internships  = Array.isArray(rawInternships)  ? rawInternships  : [];
 
   if (loadingApps || loadingJobs) return (
     <div className="page-container"><Breadcrumbs />

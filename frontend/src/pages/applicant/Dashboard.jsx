@@ -16,16 +16,19 @@ import {
 
 const ApplicantDashboard = () => {
   const { user } = useAuth();
-  const { data: internships, loading: loadingJobs } = useApi("/internships");
-  const { data: applications, loading: loadingApps } = useApi("/applications");
+  const { data: rawInternships, loading: loadingJobs } = useApi("/internships");
+  const { data: rawApplications, loading: loadingApps } = useApi("/applications");
 
-  const openVacanciesCount = internships.filter(i => i.status === "open").length;
-  const userApplications   = applications.length > 0 ? applications : [];
+  const internships  = Array.isArray(rawInternships) ? rawInternships : [];
+  const applications = Array.isArray(rawApplications) ? rawApplications : [];
+
+  const openVacanciesCount = internships.filter(i => i?.status === "open").length;
+  const userApplications   = applications;
   const totalApps          = userApplications.length;
-  const shortlistedCount   = userApplications.filter(a => a.status === "shortlisted").length;
-  const pendingCount       = userApplications.filter(a => a.status === "under_review" || a.status === "submitted").length;
+  const shortlistedCount   = userApplications.filter(a => a?.status === "shortlisted").length;
+  const pendingCount       = userApplications.filter(a => a?.status === "under_review" || a?.status === "submitted").length;
 
-  const acceptedApp = applications.find(a => a.status === "accepted");
+  const acceptedApp = applications.find(a => a?.status === "accepted");
 
   return (
     <div className="page-container">
