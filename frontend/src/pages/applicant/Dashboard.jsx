@@ -8,6 +8,7 @@ import Button from "../../components/ui/Button";
 import Breadcrumbs from "../../components/layout/Breadcrumbs";
 import Skeleton from "../../components/ui/Skeleton";
 import useApi from "../../hooks/useApi";
+import { fDate } from "../../utils/formatters";
 import { generateOfferLetterPdf } from "../../utils/generateOfferLetterPdf";
 import {
   Briefcase, FileText, CheckCircle2, Clock, ArrowRight, User,
@@ -29,6 +30,19 @@ const ApplicantDashboard = () => {
   const pendingCount       = userApplications.filter(a => a?.status === "under_review" || a?.status === "submitted").length;
 
   const acceptedApp = applications.find(a => a?.status === "accepted");
+
+  if (loadingJobs || loadingApps) {
+    return (
+      <div className="page-container">
+        <Breadcrumbs />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
@@ -155,7 +169,7 @@ const ApplicantDashboard = () => {
         <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex gap-0.5">
           <div className="h-full bg-yellow-400" style={{ width: totalApps ? `${(pendingCount / totalApps) * 100}%` : '0%' }} title="Under Review" />
           <div className="h-full bg-purple-500" style={{ width: totalApps ? `${(shortlistedCount / totalApps) * 100}%` : '0%' }} title="Shortlisted" />
-          <div className="h-full bg-green-500" style={{ width: totalApps ? `${(userApplications.filter(a => a.status === 'accepted').length / totalApps) * 100}%` : '0%' }} title="Accepted" />
+          <div className="h-full bg-green-500" style={{ width: totalApps ? `${(userApplications.filter(a => a?.status === 'accepted').length / totalApps) * 100}%` : '0%' }} title="Accepted" />
         </div>
 
         <div className="flex flex-wrap gap-6 mt-4 text-xs font-medium text-slate-600 dark:text-slate-300">
@@ -169,7 +183,7 @@ const ApplicantDashboard = () => {
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-green-500 inline-block" />
-            Accepted ({userApplications.filter(a => a.status === 'accepted').length})
+            Accepted ({userApplications.filter(a => a?.status === 'accepted').length})
           </div>
         </div>
       </div>
