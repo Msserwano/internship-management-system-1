@@ -12,10 +12,14 @@ import { Calendar, Plus, Clock, MapPin, Mail, Smartphone, CheckCircle2, XCircle,
 import toast from "react-hot-toast";
 
 const HRInterviews = () => {
-  const { data: interviews, loading, refetch } = useApi("/interviews");
-  const { data: applications }                 = useApi("/applications");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [actionId, setActionId]   = useState(null);
+  const { data: rawInterviews, loading, refetch } = useApi("/interviews");
+  const { data: rawApplications }                = useApi("/applications");
+  const interviews   = Array.isArray(rawInterviews)   ? rawInterviews   : [];
+  const applications = Array.isArray(rawApplications) ? rawApplications : [];
+
+  const [modalOpen, setModalOpen]   = useState(false);
+  const [actionId, setActionId]     = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     applicationId: "",
@@ -32,11 +36,31 @@ const HRInterviews = () => {
     sendSMS: true,
   });
 
+  const openScheduleModal = () => {
+    const firstApp = applications.length > 0 ? applications[0] : null;
+    setFormData({
+      applicationId:   firstApp ? firstApp.id : "",
+      applicantName:   firstApp ? (firstApp.applicantName || "") : "",
+      internshipTitle: firstApp ? (firstApp.internshipTitle || "") : "",
+      department:      firstApp ? (firstApp.department || "ICT") : "ICT",
+      date:            "2026-08-05",
+      time:            "10:00 AM",
+      venue:           "KCCA Boardroom 2, City Hall, 3rd Floor",
+      panelMembers:    "Mr. Peter Mwesigwa (ICT Lead), Ms. Rose Nabwire (HR Manager)",
+      instructions:    "Bring academic documents & National ID.",
+      meetingLink:     "https://meet.google.com/kcca-int-2026",
+      sendEmail:       true,
+      sendSMS:         true,
+    });
+    setModalOpen(true);
+  };
+
   const handleSchedule = async (e) => {
     e.preventDefault();
     if (!formData.applicationId) {
       return toast.error("Please select a candidate application from the dropdown.");
     }
+    setSubmitting(true);
     try {
       await interviewService.schedule({
         applicationId:   formData.applicationId,
@@ -48,13 +72,16 @@ const HRInterviews = () => {
         venue:           formData.venue,
         meetingLink:     formData.meetingLink,
         instructions:    formData.instructions,
-        panelMembers:    formData.panelMembers ? formData.panelMembers.split(",") : [],
+        panelMembers:    formData.panelMembers ? formData.panelMembers.split(",").map(s => s.trim()) : [],
       });
       toast.success("Interview scheduled & confirmed! Notifications dispatched.");
       setModalOpen(false);
       refetch();
     } catch (err) {
+      console.error("[SCHEDULE ERROR]", err);
       toast.error(err.response?.data?.message || "Failed to schedule interview.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -106,7 +133,7 @@ const HRInterviews = () => {
           </p>
         </div>
 
-        <Button variant="primary" size="md" onClick={() => setModalOpen(true)} icon={Plus}>
+        <Button variant="primary" size="md" onClick={openScheduleModal} icon={Plus}>
           Schedule New Interview
         </Button>
       </div>
@@ -135,7 +162,7 @@ const HRInterviews = () => {
           <div className="card p-12 text-center text-slate-400 text-sm space-y-3">
             <Calendar className="w-12 h-12 mx-auto opacity-30" />
             <p className="font-semibold">No interviews scheduled yet.</p>
-            <Button variant="primary" size="sm" onClick={() => setModalOpen(true)} icon={Plus}>Schedule First Interview</Button>
+            <Button variant="primary" size="sm" onClick={openScheduleModal} icon={Plus}>Schedule First Interview</Button>
           </div>
         ) : (
           interviews.map((ivw) => {
@@ -233,18 +260,19 @@ const HRInterviews = () => {
               <Select
                 label="Candidate Application"
                 required
+                placeholder="-- Select Candidate Application --"
                 value={formData.applicationId}
                 onChange={e => {
-                  const picked = applications.find(a => a.id === e.target.value);
+                  const picked = applications.find(a => String(a.id) === String(e.target.value));
                   setFormData({
                     ...formData,
                     applicationId:  e.target.value,
                     applicantName:  picked?.applicantName  || "",
                     internshipTitle: picked?.internshipTitle || "",
-                    department:     picked?.department     || "",
+                    department:     picked?.department     || "ICT",
                   });
                 }}
-                options={applications.map(a => ({ label: `${a.applicantName} – ${a.internshipTitle}`, value: a.id }))}
+                options={applications.map(a => ({ label: `${a.applicantName || 'Applicant'} – ${a.internshipTitle || 'Role'} (${a.department || 'General'})`, value: a.id }))}
               />
               <Input label="Directorate" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} />
             </div>
@@ -276,7 +304,7 @@ const HRInterviews = () => {
 
             <div className="flex justify-end gap-2 pt-3 border-t">
               <Button type="button" variant="ghost" size="sm" onClick={() => setModalOpen(false)}>Cancel</Button>
-              <Button type="submit" variant="primary" size="md">Confirm &amp; Dispatch Invitation</Button>
+              <Button type="submit" variant="primary" size="md" loading={submitting}>Confirm &amp; Dispatch Invitation</Button>
             </div>
           </form>
         </Modal>
