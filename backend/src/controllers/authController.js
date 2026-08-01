@@ -76,12 +76,16 @@ const loginUser = async (req, res) => {
       userType = "staff_user";
     }
 
-    // 2. Fall back to legacy staff_users table
+    // 2. Fall back to legacy staff_users table (graceful if table doesn't exist)
     if (!user) {
-      const staffRes = await client.query("SELECT * FROM staff_users WHERE LOWER(email) = $1", [normalizedEmail]);
-      if (staffRes.rows[0]) {
-        user = staffRes.rows[0];
-        userType = "staff_legacy";
+      try {
+        const staffRes = await client.query("SELECT * FROM staff_users WHERE LOWER(email) = $1", [normalizedEmail]);
+        if (staffRes.rows[0]) {
+          user = staffRes.rows[0];
+          userType = "staff_legacy";
+        }
+      } catch (legacyErr) {
+        // staff_users table may not exist in fresh databases — silently continue
       }
     }
 

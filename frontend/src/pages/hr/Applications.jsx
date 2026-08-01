@@ -35,11 +35,12 @@ const HRApplications = () => {
   const filteredApps = useMemo(() => {
     return apps.filter((app) => {
       const matchSearch =
+        !search ||
         app.applicantName?.toLowerCase().includes(search.toLowerCase()) ||
         app.internshipTitle?.toLowerCase().includes(search.toLowerCase());
       const matchDept   = !deptFilter   || app.department === deptFilter;
       const matchStatus = !statusFilter || app.status === statusFilter;
-      const matchUni    = !uniFilter    || app.university === uniFilter;
+      const matchUni    = !uniFilter    || (app.university || "").toLowerCase().includes(uniFilter.toLowerCase());
       return matchSearch && matchDept && matchStatus && matchUni;
     });
   }, [apps, search, deptFilter, statusFilter, uniFilter]);

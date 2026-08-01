@@ -20,10 +20,13 @@ const applicationSelect = `
     COALESCE(i.department, 'General') AS department,
     COALESCE(u.name, app.full_name, 'Applicant') AS "applicantName",
     COALESCE(u.email, app.email) AS "applicantEmail",
-    ur.name           AS "assignedHrName"
+    ur.name           AS "assignedHrName",
+    COALESCE(app.institution, '') AS university,
+    COALESCE(app.gpa, '') AS gpa,
+    COALESCE(app.gender, '') AS gender
   FROM applications a
   LEFT JOIN internships i  ON i.id  = a.internship_id
-  LEFT JOIN users u        ON u.id  = a.applicant_id
+  LEFT JOIN users u        ON u.id::text  = a.applicant_id
   LEFT JOIN applicants app ON app.applicant_id::text = a.applicant_id
   LEFT JOIN users ur       ON ur.id = a.assigned_hr_id`;
 

@@ -146,13 +146,14 @@ const updateInterview = async (req, res) => {
     const updates = req.body;
     const isApplicant = !isStaff(req.user);
 
-    if (
-      isApplicant &&
-      (String(check.rows[0].applicant_id) !== String(req.user.id) ||
-        !["accepted", "declined"].includes(updates.status) ||
-        Object.keys(updates).some(k => k !== "status"))
-    ) {
-      return res.status(403).json({ success: false, message: "Applicants may only accept or decline their own interview." });
+    // Applicants may ONLY accept or decline their own interview
+    if (isApplicant) {
+      const ownsInterview = String(check.rows[0].applicant_id) === String(req.user.id);
+      const validStatus   = ["accepted", "declined"].includes(updates.status);
+      const onlyStatus    = Object.keys(updates).every(k => k === "status");
+      if (!ownsInterview || !validStatus || !onlyStatus) {
+        return res.status(403).json({ success: false, message: "Applicants may only accept or decline their own interview." });
+      }
     }
 
     const fieldMap = {

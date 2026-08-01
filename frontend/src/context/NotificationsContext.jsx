@@ -24,11 +24,26 @@ export function NotificationsProvider({ children }) {
       payload = payload || {};
 
       if (n.type === "application_submitted") {
-        title   = "New application received";
-        message = `Application ${payload.applicationId || ""} has been submitted.`;
+        title   = "New Application Received";
+        message = `Application ${payload.applicationId || ""} for ${payload.title || "a role"} has been submitted by ${payload.applicantName || "an applicant"}.`;
       } else if (n.type === "application_assigned") {
-        title   = "Application assigned to you";
-        message = `Application ${payload.applicationId || ""} has been assigned to you.`;
+        title   = "Application Assigned to You";
+        message = `Application ${payload.applicationId || ""} has been assigned to you for review.`;
+      } else if (n.type === "application_accepted") {
+        title   = "🎉 CONGRATULATIONS! Internship Offer";
+        message = payload.message || `Your application for ${payload.internshipTitle || "an internship"} has been ACCEPTED!`;
+      } else if (n.type === "application_rejected") {
+        title   = "Application Update";
+        message = payload.message || `Your application status has been updated.`;
+      } else if (n.type === "status_updated") {
+        title   = "Application Status Updated";
+        message = payload.message || `Your application status has been updated to ${payload.status || "a new status"}.`;
+      } else if (n.type === "interview_accepted") {
+        title   = "Interview Confirmed";
+        message = payload.message || `${payload.applicantName || "An applicant"} has accepted their interview invitation.`;
+      } else if (n.type === "interview_declined") {
+        title   = "Interview Declined";
+        message = payload.message || `${payload.applicantName || "An applicant"} has declined their interview invitation.`;
       } else {
         message = payload.message || "";
       }
