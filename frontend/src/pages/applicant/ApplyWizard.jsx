@@ -12,7 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 import {
   Check, ArrowRight, ArrowLeft, Upload, FileText, User, GraduationCap,
-  Building, Paperclip, Send, CheckCircle2
+  Building, Paperclip, Send, CheckCircle2, AlertCircle
 } from "lucide-react";
 
 const STEPS = [
@@ -526,13 +526,34 @@ const ApplyWizard = () => {
 
                 <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl space-y-2">
                   <h4 className="font-bold text-xs text-primary-600 dark:text-primary-400 uppercase">Attached Documents</h4>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <p>✓ National ID</p>
-                    <p>✓ Recommendation Letter</p>
-                    <p>✓ Academic Transcript</p>
-                    <p>✓ Curriculum Vitae</p>
-                    <p>✓ Cover Letter</p>
-                    <p>✓ Passport Photo</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {[
+                      { field: "recommendationDoc", label: "Recommendation Letter" },
+                      { field: "transcriptDoc",     label: "Academic Transcript" },
+                      { field: "cvDoc",             label: "Curriculum Vitae (CV)" },
+                      { field: "coverLetterDoc",    label: "Cover Letter" },
+                      { field: "photoDoc",          label: "Passport Photo" },
+                    ].map(({ field, label }) => {
+                      const val      = formData[field];
+                      const uploaded = !!val;
+                      const fileName = typeof val === "object" ? val?.name : val;
+                      return (
+                        <div key={field} className={`flex items-center gap-2 p-2 rounded-lg ${
+                          uploaded
+                            ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+                            : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300"
+                        }`}>
+                          {uploaded
+                            ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                            : <AlertCircle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />}
+                          <span className="flex-1 font-medium">{label}</span>
+                          {uploaded && fileName && (
+                            <span className="text-[10px] opacity-75 truncate max-w-[100px]">{fileName}</span>
+                          )}
+                          {!uploaded && <span className="text-[10px] opacity-75">Not uploaded</span>}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
