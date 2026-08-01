@@ -3,12 +3,62 @@ import api from "../api/axios";
 
 const AuthContext = createContext(null);
 
+// ---------------------------------------------------------------------------
+// Decode a JWT payload client-side (no library needed — just base64 decode)
+// Returns the payload object, or null if the token is malformed.
+// ---------------------------------------------------------------------------
+const decodeToken = (token) => {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const json   = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
+        .join("")
+    );
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+// Returns true only when the token exists and has NOT yet expired.
+const isTokenValid = (token) => {
+  if (!token) return false;
+  const payload = decodeToken(token);
+  if (!payload || !payload.exp) return false;
+  // exp is Unix seconds; Date.now() is milliseconds
+  return payload.exp * 1000 > Date.now();
+};
+
+// ---------------------------------------------------------------------------
+// Exported helper — called by the axios response interceptor on 401 errors
+// so we can clear storage without creating a circular import.
+// ---------------------------------------------------------------------------
+export const clearAuthStorage = () => {
+  localStorage.removeItem("kcca_token");
+  localStorage.removeItem("kcca_user");
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // On mount: validate the stored token before trusting the stored user.
   useEffect(() => {
+    const token  = localStorage.getItem("kcca_token");
     const stored = localStorage.getItem("kcca_user");
+
+    // If there is no token, or the token has expired → clear everything.
+    if (!isTokenValid(token)) {
+      clearAuthStorage();
+      setLoading(false);
+      return;
+    }
+
+    // Token is valid — restore the user object from storage.
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -17,10 +67,11 @@ export function AuthProvider({ children }) {
         }
         setUser(parsed);
       } catch {
-        localStorage.removeItem("kcca_user");
-        localStorage.removeItem("kcca_token");
+        // Corrupted JSON — wipe and stay logged out.
+        clearAuthStorage();
       }
     }
+
     setLoading(false);
   }, []);
 
@@ -39,10 +90,10 @@ export function AuthProvider({ children }) {
     } catch (err) {
       const status = err.response?.status;
       const errCode = err.response?.data?.code;
-      const errMsg = err.response?.data?.message;
+      const errMsg  = err.response?.data?.message;
       if (status === 403 && errCode === "EMAIL_NOT_VERIFIED") {
         const notVerifiedErr = new Error(errMsg || "Please verify your email before logging in.");
-        notVerifiedErr.code = "EMAIL_NOT_VERIFIED";
+        notVerifiedErr.code  = "EMAIL_NOT_VERIFIED";
         notVerifiedErr.email = err.response?.data?.email || normalizedEmail;
         throw notVerifiedErr;
       }
@@ -51,8 +102,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("kcca_token");
-    localStorage.removeItem("kcca_user");
+    clearAuthStorage();
     setUser(null);
   }, []);
 
