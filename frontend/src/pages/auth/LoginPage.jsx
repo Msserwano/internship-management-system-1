@@ -105,8 +105,8 @@ const LoginPage = () => {
           <div className="absolute bottom-20 right-20 w-64 h-64 rounded-full bg-secondary-400 blur-3xl"/>
         </div>
         <motion.div initial={{opacity:0,x:30}} animate={{opacity:1,x:0}} transition={{delay:.3}} className="relative text-center max-w-md">
-          <div className="w-36 h-36 bg-white rounded-3xl flex items-center justify-center mx-auto mb-8 p-3 shadow-2xl border border-white/40">
-            <img src="/kcca-logo.png" alt="KCCA Official Logo" className="w-full h-full object-contain" />
+          <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-8 border border-white/30">
+            <Briefcase className="w-8 h-8 text-white"/>
           </div>
           <h2 className="text-3xl font-bold mb-4">Build Your Career with KCCA</h2>
           <p className="text-primary-100 leading-relaxed mb-8">
