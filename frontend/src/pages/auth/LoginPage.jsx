@@ -39,8 +39,8 @@ const LoginPage = () => {
               <img src="/kcca-logo.png" alt="KCCA Logo" className="h-28 w-auto object-contain" />
             </div>
             <div className="text-center">
-              <p className="text-primary-600 dark:text-primary-400 font-black text-lg tracking-wide uppercase">KCCA INTERNSHIP PORTAL</p>
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Kampala Capital City Authority</p>
+              <p className="text-green-600 dark:text-green-400 font-black text-xl tracking-wide uppercase">KCCA INTERNSHIP PORTAL</p>
+              <p className="text-green-700/80 dark:text-green-300/80 text-xs font-bold tracking-wider">KAMPALA CAPITAL CITY AUTHORITY</p>
             </div>
           </Link>
 
@@ -84,7 +84,7 @@ const LoginPage = () => {
               </div>
 
               <button type="submit" disabled={loading}
-                className="btn btn-primary btn-md w-full text-base py-3"
+                className="btn bg-green-600 hover:bg-green-700 text-white btn-md w-full text-base py-3 shadow-md shadow-green-600/20"
               >
                 {loading ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Signing in…</> : <>Sign In <ArrowRight className="w-4 h-4"/></>}
               </button>
@@ -92,7 +92,7 @@ const LoginPage = () => {
 
             <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
               Don't have an account?{" "}
-              <Link to="/register" className="text-primary-500 font-semibold hover:underline">Create Account</Link>
+              <Link to="/register" className="text-green-600 dark:text-green-400 font-semibold hover:underline">Create Account</Link>
             </p>
           </motion.div>
         </div>
