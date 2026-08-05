@@ -62,12 +62,12 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
         <img src="/kcca-logo.png" alt="KCCA Logo" className="w-9 h-9 object-contain bg-white rounded-xl p-0.5 shadow-sm flex-shrink-0" />
         {(!collapsed || mobileOpen) && (
           <div className="min-w-0">
-            <p className="text-white font-bold text-sm leading-tight">KCCA</p>
-            <p className="text-primary-200 text-xs leading-tight">Internship Portal</p>
+            <p className="text-white font-black text-sm leading-tight tracking-wide">KCCA</p>
+            <p className="text-yellow-300 text-xs font-semibold leading-tight">Internship Portal</p>
           </div>
         )}
         {mobileOpen && (
-          <button onClick={() => setMobileOpen(false)} className="ml-auto text-primary-200 hover:text-white">
+          <button onClick={() => setMobileOpen(false)} className="ml-auto text-red-200 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         )}
@@ -75,26 +75,26 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
 
       {/* User Badge */}
       {(!collapsed || mobileOpen) && (
-        <div className="px-4 py-4 border-b border-white/10">
+        <div className="px-4 py-4 border-b border-white/10 bg-black/10">
           <div className="flex items-center gap-3">
             <Avatar name={user?.name} size="sm" />
             <div className="min-w-0 flex-1">
               <p className="text-white text-sm font-semibold truncate">{user?.name}</p>
-              <p className="text-primary-200 text-xs capitalize">{user?.role}</p>
+              <p className="text-yellow-300 text-xs capitalize font-medium">{user?.role}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Nav Links */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {nav.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             onClick={() => setMobileOpen?.(false)}
             className={({ isActive }) =>
-              cn("sidebar-item relative", isActive && "sidebar-item-active text-white",
+              cn("sidebar-item text-red-100 hover:bg-white/10 hover:text-white transition-all", isActive && "sidebar-item-active",
                 collapsed && !mobileOpen && "justify-center px-2")
             }
             title={collapsed && !mobileOpen ? item.label : undefined}
@@ -108,17 +108,17 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
       </nav>
 
       {/* Footer Controls */}
-      <div className={cn("px-3 py-4 border-t border-white/10 space-y-1", collapsed && !mobileOpen && "px-2")}>
+      <div className={cn("px-3 py-4 border-t border-white/10 space-y-1 bg-black/10", collapsed && !mobileOpen && "px-2")}>
         <button
           onClick={toggle}
-          className={cn("sidebar-item text-primary-200 hover:text-white w-full", collapsed && !mobileOpen && "justify-center px-2")}
+          className={cn("sidebar-item text-red-200 hover:text-white hover:bg-white/10 w-full", collapsed && !mobileOpen && "justify-center px-2")}
         >
           {dark ? <Sun className="w-5 h-5 flex-shrink-0" /> : <Moon className="w-5 h-5 flex-shrink-0" />}
           {(!collapsed || mobileOpen) && <span>{dark ? "Light Mode" : "Dark Mode"}</span>}
         </button>
         <button
           onClick={handleLogout}
-          className={cn("sidebar-item text-red-300 hover:text-red-100 hover:bg-red-500/20 w-full", collapsed && !mobileOpen && "justify-center px-2")}
+          className={cn("sidebar-item text-yellow-300 hover:text-yellow-100 hover:bg-white/10 w-full font-bold", collapsed && !mobileOpen && "justify-center px-2")}
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {(!collapsed || mobileOpen) && <span>Logout</span>}
@@ -133,14 +133,14 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
       <motion.aside
         animate={{ width: collapsed ? 72 : 260 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="hidden md:flex flex-col h-screen bg-gradient-to-b from-primary-700 to-primary-900 fixed left-0 top-0 z-30 shadow-xl overflow-hidden"
+        className="hidden md:flex flex-col h-screen bg-gradient-to-b from-red-700 via-red-800 to-red-950 fixed left-0 top-0 z-30 shadow-2xl overflow-hidden border-r border-red-900"
       >
         <SidebarContent />
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute top-5 -right-3 w-6 h-6 bg-white dark:bg-slate-700 rounded-full shadow-md flex items-center justify-center border border-slate-200 dark:border-slate-600 hover:bg-slate-50"
+          className="absolute top-5 -right-3 w-6 h-6 bg-yellow-400 rounded-full shadow-lg flex items-center justify-center border border-yellow-500 hover:bg-yellow-300 text-slate-950 font-bold"
         >
-          {collapsed ? <ChevronRight className="w-3 h-3 text-slate-600" /> : <ChevronLeft className="w-3 h-3 text-slate-600" />}
+          {collapsed ? <ChevronRight className="w-3.5 h-3.5 text-slate-950" /> : <ChevronLeft className="w-3.5 h-3.5 text-slate-950" />}
         </button>
       </motion.aside>
 
@@ -150,13 +150,13 @@ const Sidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              className="fixed inset-0 bg-black/60 z-40 md:hidden"
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside
               initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed left-0 top-0 bottom-0 w-72 bg-gradient-to-b from-primary-700 to-primary-900 z-50 md:hidden shadow-2xl flex flex-col"
+              className="fixed left-0 top-0 bottom-0 w-72 bg-gradient-to-b from-red-700 via-red-800 to-red-950 z-50 md:hidden shadow-2xl flex flex-col border-r border-red-900"
             >
               <SidebarContent />
             </motion.aside>

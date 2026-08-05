@@ -44,7 +44,7 @@
            transition-all duration-200 cursor-pointer select-none w-full;
   }
   .sidebar-item-active {
-    @apply bg-primary-500 !text-white shadow-md;
+    @apply bg-red-600 !text-white font-bold shadow-md ring-2 ring-yellow-400/40;
   }
 
   .badge { @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
@@ -69,7 +69,7 @@
     @apply w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600
            bg-white dark:bg-slate-700/50 text-slate-800 dark:text-slate-100
            placeholder-slate-400 dark:placeholder-slate-500
-           focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500
+           focus:outline-none focus:ring-2 focus:ring-yellow-400/60 focus:border-yellow-500
            transition-all text-sm;
   }
   .form-input-error { @apply border-danger focus:ring-red-300 focus:border-danger; }
@@ -85,7 +85,7 @@
   .btn-sm  { @apply px-3   py-1.5  text-xs; }
   .btn-md  { @apply px-4   py-2.5  text-sm; }
   .btn-lg  { @apply px-6   py-3    text-base; }
-  .btn-primary   { @apply bg-primary-500   text-white  hover:bg-primary-600   focus:ring-primary-500; }
+  .btn-primary   { @apply bg-yellow-400 text-slate-950 font-bold hover:bg-yellow-500 focus:ring-yellow-400 shadow-sm; }
   .btn-secondary { @apply bg-secondary-500 text-slate-900 hover:bg-secondary-600 focus:ring-secondary-500; }
   .btn-accent    { @apply bg-accent-500    text-white  hover:bg-accent-600    focus:ring-accent-500; }
   .btn-outline   { @apply border border-primary-500 text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 focus:ring-primary-500 bg-transparent; }

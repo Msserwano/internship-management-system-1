@@ -94,7 +94,7 @@ const ApplicantDashboard = () => {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-3xl p-8 text-white bg-gradient-to-r from-primary-600 via-primary-500 to-sky-500 shadow-lg relative overflow-hidden"
+        className="rounded-3xl p-8 text-white bg-gradient-to-r from-emerald-700 via-green-700 to-emerald-800 shadow-lg relative overflow-hidden border border-emerald-600/30"
       >
         <div className="relative z-10 max-w-3xl">
           <h1 className="text-3xl font-extrabold mb-2">

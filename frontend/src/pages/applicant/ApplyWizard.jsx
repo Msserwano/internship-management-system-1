@@ -221,7 +221,7 @@ const ApplyWizard = () => {
       )}
 
       {/* Header Banner */}
-      <div className="card p-6 bg-gradient-to-r from-primary-600 to-primary-800 text-white mb-6">
+      <div className="card p-6 bg-gradient-to-r from-emerald-700 via-green-700 to-emerald-800 text-white mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-semibold bg-white/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
