@@ -5,24 +5,59 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Primary: KCCA Official Deep Green (#006837)
         primary: {
-          50: "#e6f0f9", 100: "#cce0f3", 200: "#99c1e7", 300: "#66a2db",
-          400: "#3383cf", 500: "#005BAC", 600: "#004e93", 700: "#003d74",
-          800: "#002c55", 900: "#001b36", DEFAULT: "#005BAC",
+          50:  "#eaf5ee",
+          100: "#c9e8d4",
+          200: "#96d2aa",
+          300: "#62bc80",
+          400: "#2ea656",
+          500: "#006837", // KCCA Official Green
+          600: "#00572e",
+          700: "#004524",
+          800: "#00341b",
+          900: "#002211",
+          DEFAULT: "#006837",
         },
+        // Secondary: KCCA Official Red (#ED1C24)
         secondary: {
-          50: "#fef9e7", 100: "#fdf3cf", 200: "#fbe79f", 300: "#f9db6f",
-          400: "#f7cf3f", 500: "#F4B400", 600: "#d49e00", 700: "#a87e00",
-          800: "#7c5e00", 900: "#503e00", DEFAULT: "#F4B400",
+          50:  "#feebee",
+          100: "#ffcdd2",
+          200: "#ef9a9a",
+          300: "#e57373",
+          400: "#ef5350",
+          500: "#ED1C24", // KCCA Official Red
+          600: "#d31920",
+          700: "#b7151b",
+          800: "#991015",
+          900: "#7a0b0f",
+          DEFAULT: "#ED1C24",
         },
+        // Accent: KCCA Clock Tower Gold / Sun Yellow (#FFC20E)
         accent: {
-          50: "#f0fdf4", 100: "#dcfce7", 200: "#bbf7d0", 300: "#86efac",
-          400: "#4ade80", 500: "#16A34A", 600: "#15803d", 700: "#166534",
-          800: "#145523", 900: "#052e16", DEFAULT: "#16A34A",
+          50:  "#fffde7",
+          100: "#fff9c4",
+          200: "#fff59d",
+          300: "#fff176",
+          400: "#ffee58",
+          500: "#FFC20E", // KCCA Clock Tower Gold
+          600: "#e0a800",
+          700: "#b38600",
+          800: "#856300",
+          900: "#574100",
+          DEFAULT: "#FFC20E",
+        },
+        // KCCA Brand Color shortcuts
+        kcca: {
+          green: "#006837",
+          red: "#ED1C24",
+          gold: "#FFC20E",
+          darkGreen: "#004524",
+          lightGreen: "#eaf5ee",
         },
         bg: "#F8FAFC",
         surface: "#FFFFFF",
-        danger: "#DC2626",
+        danger: "#ED1C24",
         warning: "#D97706",
         info: "#0284C7",
       },

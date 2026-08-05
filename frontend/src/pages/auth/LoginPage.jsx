@@ -34,11 +34,13 @@ const LoginPage = () => {
       {}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 bg-white dark:bg-slate-900">
         <div className="mx-auto w-full max-w-sm">
-          <Link to="/" className="flex items-center gap-2 mb-10">
-            <img src="/kcca-logo.png" alt="KCCA Logo" className="h-10 w-auto object-contain bg-white rounded-xl p-0.5 shadow-sm" />
-            <div>
-              <p className="text-primary-700 dark:text-primary-300 font-bold text-sm leading-tight">KCCA</p>
-              <p className="text-slate-400 text-[10px]">Internship Portal</p>
+          <Link to="/" className="flex flex-col items-center justify-center mb-8 group">
+            <div className="p-4 bg-white rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 mb-3 group-hover:scale-105 transition-transform duration-300">
+              <img src="/kcca-logo.png" alt="KCCA Logo" className="h-28 w-auto object-contain" />
+            </div>
+            <div className="text-center">
+              <p className="text-primary-700 dark:text-primary-300 font-extrabold text-base tracking-wide">KCCA INTERNSHIP PORTAL</p>
+              <p className="text-slate-400 text-xs font-medium">Kampala Capital City Authority</p>
             </div>
           </Link>
 
@@ -103,8 +105,8 @@ const LoginPage = () => {
           <div className="absolute bottom-20 right-20 w-64 h-64 rounded-full bg-secondary-400 blur-3xl"/>
         </div>
         <motion.div initial={{opacity:0,x:30}} animate={{opacity:1,x:0}} transition={{delay:.3}} className="relative text-center max-w-md">
-          <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/30">
-            <Briefcase className="w-10 h-10 text-white"/>
+          <div className="w-36 h-36 bg-white rounded-3xl flex items-center justify-center mx-auto mb-8 p-3 shadow-2xl border border-white/40">
+            <img src="/kcca-logo.png" alt="KCCA Official Logo" className="w-full h-full object-contain" />
           </div>
           <h2 className="text-3xl font-bold mb-4">Build Your Career with KCCA</h2>
           <p className="text-primary-100 leading-relaxed mb-8">

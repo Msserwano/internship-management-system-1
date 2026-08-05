@@ -91,11 +91,11 @@ export const MonthlyLineChart = ({ applications = [] }) => {
       fill: true,
       label: "Applications",
       data: counts,
-      borderColor: "#005BAC",
-      backgroundColor: "rgba(0, 91, 172, 0.1)",
+      borderColor: "#006837",
+      backgroundColor: "rgba(0, 104, 55, 0.12)",
       tension: 0.4,
       pointRadius: 4,
-      pointBackgroundColor: "#005BAC",
+      pointBackgroundColor: "#006837",
     }],
   };
   const options = {
@@ -126,7 +126,7 @@ export const UniversityBarChart = ({ applications = [] }) => {
     datasets: [{
       label: "Applicants",
       data: values,
-      backgroundColor: "rgba(22, 163, 74, 0.85)",
+      backgroundColor: "rgba(0, 104, 55, 0.85)",
       borderRadius: 8,
     }],
   };
@@ -139,7 +139,7 @@ export const GenderPieChart = () => {
     labels: ["Female", "Male", "Not Specified"],
     datasets: [{
       data: [1, 1, 1],
-      backgroundColor: ["#005BAC", "#F4B400", "#e2e8f0"],
+      backgroundColor: ["#006837", "#ED1C24", "#FFC20E"],
       borderWidth: 0,
     }],
   };

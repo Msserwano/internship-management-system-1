@@ -35,7 +35,7 @@
   .card { @apply bg-white dark:bg-slate-800 rounded-2xl shadow-card border border-slate-100 dark:border-slate-700; }
   .card-hover { @apply card transition-all duration-200 hover:shadow-card-md hover:-translate-y-0.5; }
 
-  .hero-gradient { background: linear-gradient(135deg, #005BAC 0%, #003d74 55%, #0369a1 100%); }
+  .hero-gradient { background: linear-gradient(135deg, #006837 0%, #004524 55%, #002211 100%); }
 
   .sidebar-item {
     @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
