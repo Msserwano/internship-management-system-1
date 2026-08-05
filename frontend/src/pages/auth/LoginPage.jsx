@@ -39,8 +39,8 @@ const LoginPage = () => {
               <img src="/kcca-logo.png" alt="KCCA Logo" className="h-28 w-auto object-contain" />
             </div>
             <div className="text-center">
-              <p className="text-primary-700 dark:text-primary-300 font-extrabold text-base tracking-wide">KCCA INTERNSHIP PORTAL</p>
-              <p className="text-slate-400 text-xs font-medium">Kampala Capital City Authority</p>
+              <p className="text-primary-600 dark:text-primary-400 font-black text-lg tracking-wide uppercase">KCCA INTERNSHIP PORTAL</p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Kampala Capital City Authority</p>
             </div>
           </Link>
 
