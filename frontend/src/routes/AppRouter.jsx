@@ -21,6 +21,7 @@ import Documents            from "../pages/applicant/Documents";
 import ApplicantProfile     from "../pages/applicant/Profile";
 import ApplicantSettings    from "../pages/applicant/Settings";
 import ApplicantNotifications from "../pages/applicant/Notifications";
+import EvaluationPage from "../pages/applicant/Evaluation";
 
 // HR pages
 import HRDashboard     from "../pages/hr/Dashboard";
@@ -33,6 +34,7 @@ import HRInterviews    from "../pages/hr/Interviews";
 import HRReports       from "../pages/hr/Reports";
 import HRUsers         from "../pages/hr/Users";
 import HRSettings      from "../pages/hr/Settings";
+import HREvaluations   from "../pages/hr/Evaluations";
 
 // Admin pages
 import AdminDashboard      from "../pages/admin/Dashboard";
@@ -121,6 +123,7 @@ const AppRouter = () => (
         <Route path="profile"       element={<ApplicantProfile />} />
         <Route path="settings"      element={<ApplicantSettings />} />
         <Route path="notifications" element={<ApplicantNotifications />} />
+        <Route path="evaluation"    element={<EvaluationPage />} />
       </Route>
 
       {/* HR routes */}
@@ -136,6 +139,7 @@ const AppRouter = () => (
         <Route path="reports"       element={<HRReports />} />
         <Route path="users"         element={<HRUsers />} />
         <Route path="settings"      element={<HRSettings />} />
+        <Route path="evaluations"   element={<HREvaluations />} />
       </Route>
 
       {/* Admin routes */}

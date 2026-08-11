@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Briefcase, FileText, Calendar, FolderOpen,
   User, Settings, LogOut, ChevronLeft, ChevronRight,
   Building2, Users, BarChart3, ClipboardList, Shield, ScrollText,
-  Database, Bell, Sun, Moon, X,
+  Database, Bell, Sun, Moon, X, ClipboardCheck,
 } from "lucide-react";
 import { cn } from "../../utils/cn";
 
@@ -18,6 +18,7 @@ const APPLICANT_NAV = [
   { label: "My Applications",      icon: FileText,        to: "/applicant/applications" },
   { label: "Interview Schedule",   icon: Calendar,        to: "/applicant/interviews" },
   { label: "Documents",            icon: FolderOpen,      to: "/applicant/documents" },
+  { label: "Evaluation",           icon: ClipboardCheck,  to: "/applicant/evaluation" },
   { label: "Profile",              icon: User,            to: "/applicant/profile" },
   { label: "Settings",             icon: Settings,        to: "/applicant/settings" },
 ];
@@ -30,6 +31,7 @@ const HR_NAV = [
   { label: "Departments",     icon: Building2,       to: "/hr/departments" },
   { label: "Interviews",      icon: Calendar,        to: "/hr/interviews" },
   { label: "Reports",         icon: BarChart3,       to: "/hr/reports" },
+  { label: "Evaluations",     icon: ClipboardCheck,  to: "/hr/evaluations" },
   { label: "Users",           icon: ClipboardList,   to: "/hr/users" },
   { label: "Settings",        icon: Settings,        to: "/hr/settings" },
 ];

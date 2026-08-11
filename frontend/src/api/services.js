@@ -54,3 +54,10 @@ export const auditService = {
   list:   (params = {}) => api.get("/data/audit-logs", { params }),
   export: (params = {}, opts = {}) => api.get("/data/audit-logs/export", { params, responseType: opts.responseType || "blob" }),
 };
+
+export const evaluationService = {
+  submit:  (data)         => api.post("/evaluations", data),
+  getMy:   ()             => api.get("/evaluations/my"),
+  getAll:  (params = {})  => api.get("/evaluations", { params }),
+  getById: (id)           => api.get(`/evaluations/${id}`),
+};

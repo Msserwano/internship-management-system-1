@@ -37,6 +37,7 @@ const applicationRoutes = require("./routes/applicationRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const genericRoutes = require("./routes/genericRoutes");
+const evaluationRoutes = require("./routes/evaluationRoutes");
 
 const app = express();
 
@@ -113,6 +114,7 @@ app.use("/api/applicants", applicantRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/evaluations", evaluationRoutes);
 
 app.use('/api/data', genericRoutes);
 
