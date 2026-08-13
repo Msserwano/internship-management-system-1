@@ -7,6 +7,19 @@ const isStaff = (user) => ["hr", "admin"].includes(String(user?.role).toLowerCas
 // Lazy getter — prevents crash on import when DB is not yet ready
 const pool = () => getPool();
 
+// Fix: run schema migrations once at module load, not on every request
+let appColumnsMigrated = false;
+const ensureApplicationColumns = async () => {
+  if (appColumnsMigrated) return;
+  try {
+    const db = pool();
+    await db.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
+    await db.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS documents JSONB");
+    appColumnsMigrated = true;
+  } catch (e) { /* ignore */ }
+};
+ensureApplicationColumns();
+
 // Shared SELECT that joins internship title, applicant name, and assigned HR name
 const applicationSelect = `
   SELECT
@@ -102,9 +115,6 @@ const submitApplication = async (req, res) => {
 
     const client = await pool().connect();
     try {
-      // Ensure timeline and documents columns exist (safe in all environments)
-      await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
-      await client.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS documents JSONB");
       await client.query("BEGIN");
 
       const internshipRes = await client.query("SELECT * FROM internships WHERE id = $1 FOR UPDATE", [internshipId]);
@@ -221,10 +231,10 @@ const submitApplication = async (req, res) => {
 const updateApplication = async (req, res) => {
   try {
     const { id } = req.params;
-    const pool = getPool();
-    await pool.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
+    // Fix: renamed to 'db' to avoid shadowing the module-level pool() function
+    const db = getPool();
 
-    const existingRes = await pool.query("SELECT * FROM applications WHERE id = $1", [id]);
+    const existingRes = await db.query("SELECT * FROM applications WHERE id = $1", [id]);
     const existing = existingRes.rows[0];
     if (!existing) return res.status(404).json({ success: false, message: "Application not found." });
 
@@ -249,7 +259,7 @@ const updateApplication = async (req, res) => {
       }]);
     }
 
-    const updateRes = await pool.query(
+    const updateRes = await db.query(
       `UPDATE applications
        SET status = $1, review_note = $2, timeline = $3, updated_at = NOW()
        WHERE id = $4
@@ -263,7 +273,7 @@ const updateApplication = async (req, res) => {
     if (newStatus && newStatus !== existing.status) {
       (async () => {
         try {
-          const appRes = await pool.query(
+          const appRes = await db.query(
             `SELECT a.*, app.email AS applicant_email, app.full_name AS applicant_name, i.title AS internship_title, i.department
              FROM applications a
              LEFT JOIN applicants app ON app.applicant_id::text = a.applicant_id
@@ -278,7 +288,7 @@ const updateApplication = async (req, res) => {
           const deptName       = row?.department || "General";
 
           // 1. Insert In-App Notification for Applicant
-          await pool.query(
+          await db.query(
             `INSERT INTO notifications (user_id, type, payload, is_read, created_at)
              VALUES ($1, $2, $3, false, NOW())`,
             [
@@ -311,7 +321,7 @@ const updateApplication = async (req, res) => {
           }
 
           // 3. Audit log
-          await pool.query(
+          await db.query(
             `INSERT INTO audit_logs (action, resource_type, resource_id, user_id, new_value, created_at) VALUES ($1,$2,$3,$4,$5,NOW())`,
             [newStatus.toUpperCase(), 'APPLICATION', id, req.user.id, JSON.stringify({ status: newStatus, note: reviewNote })]
           );

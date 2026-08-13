@@ -22,13 +22,29 @@ const interviewSelect = `
   LEFT JOIN users u         ON u.id::text = a.applicant_id
   LEFT JOIN internships i   ON i.id = a.internship_id`;
 
+// ---------------------------------------------------------------------------
+// Fix: Run column migrations ONCE at module load, not on every request
+// ---------------------------------------------------------------------------
+let columnsMigrated = false;
+const ensureInterviewColumns = async () => {
+  if (columnsMigrated) return;
+  try {
+    const pool = getPool();
+    await pool.query("ALTER TABLE interviews ADD COLUMN IF NOT EXISTS panel_members TEXT[]");
+    await pool.query("ALTER TABLE interviews ADD COLUMN IF NOT EXISTS instructions TEXT");
+    columnsMigrated = true;
+  } catch (e) {
+    // Silently ignore — columns may already exist or pool not ready yet
+  }
+};
+
+// Run migration immediately when module is loaded
+ensureInterviewColumns();
+
 
 const getAllInterviews = async (req, res) => {
   try {
     const pool = getPool();
-    // Ensure panel_members/instructions columns exist (migration-safe)
-    await pool.query("ALTER TABLE interviews ADD COLUMN IF NOT EXISTS panel_members TEXT[]");
-    await pool.query("ALTER TABLE interviews ADD COLUMN IF NOT EXISTS instructions TEXT");
 
     const { applicationId, status } = req.query;
     const clauses = [];
@@ -92,16 +108,12 @@ const scheduleInterview = async (req, res) => {
     try {
       await client.query("BEGIN");
 
-      // Ensure panel_members and instructions columns exist
-      await client.query("ALTER TABLE interviews ADD COLUMN IF NOT EXISTS panel_members TEXT[]");
-      await client.query("ALTER TABLE interviews ADD COLUMN IF NOT EXISTS instructions TEXT");
-
       const id = `IVW${String(Date.now()).slice(-6)}`;
       const panelArr = Array.isArray(panelMembers)
         ? panelMembers
         : panelMembers ? String(panelMembers).split(",").map(s => s.trim()) : [];
 
-      const result = await client.query(
+      await client.query(
         `INSERT INTO interviews
            (id, application_id, interview_date, interview_time, venue, meeting_link, panel_members, instructions, status, created_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'scheduled',NOW())
@@ -109,22 +121,23 @@ const scheduleInterview = async (req, res) => {
         [id, applicationId, date, time, venue.trim(), meetingLink || null, panelArr, instructions || null]
       );
 
-      // Update application status to 'interview'
+      // Fix: Use correct status value compatible with application_status_op ENUM
       await client.query(
-        "UPDATE applications SET status = 'interview', updated_at=NOW() WHERE id = $1",
+        "UPDATE applications SET status = 'interview_scheduled', updated_at=NOW() WHERE id = $1",
         [applicationId]
       );
 
       await client.query("COMMIT");
-      client.release();
 
       // Return the interview with joined data
       const fullResult = await pool.query(`${interviewSelect} WHERE iv.id = $1`, [id]);
       return res.status(201).json({ success: true, message: "Interview scheduled successfully.", data: fullResult.rows[0] });
     } catch (err) {
       await client.query("ROLLBACK");
-      client.release();
       throw err;
+    } finally {
+      // Fix: Always release in finally block — prevents double-release crash
+      client.release();
     }
   } catch (err) {
     console.error("[INTERVIEW CONTROLLER] schedule failed:", err.message);

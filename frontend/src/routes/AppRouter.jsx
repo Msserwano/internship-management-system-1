@@ -48,8 +48,6 @@ import AdminNotifications  from "../pages/admin/Notifications";
 // ---------------------------------------------------------------------------
 // Role-based redirect helper
 // ---------------------------------------------------------------------------
-// Role-based redirect helper
-// ---------------------------------------------------------------------------
 const roleDashboard = (role) => {
   const normRole = role ? String(role).toLowerCase() : "";
   const map = { applicant: "/applicant/dashboard", hr: "/hr/dashboard", admin: "/admin/dashboard" };

@@ -45,9 +45,11 @@ export const notificationService = {
 };
 
 export const applicantService = {
-  getAll:         (params = {}) => api.get("/applicants", { params }),
-  getById:        (id)          => api.get(`/applicants/${id}`),
-  updateProfile:  (data)        => api.put("/applicants/profile", data),
+  getAll:        (params = {}) => api.get("/applicants", { params }),
+  getById:       (id)          => api.get(`/applicants/${id}`),
+  // Fix: added missing getProfile method to match the backend GET /api/applicants/profile endpoint
+  getProfile:    ()            => api.get("/applicants/profile"),
+  updateProfile: (data)        => api.put("/applicants/profile", data),
 };
 
 export const auditService = {

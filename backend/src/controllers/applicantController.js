@@ -1,7 +1,10 @@
 const { getPool } = require('../config/database');
 
-// Helper to ensure all profile columns exist on applicants table
+// Fix: Use a module-level flag so ALTER TABLE migrations run only once,
+// not on every incoming request (was causing 8 unnecessary DB round-trips per call)
+let applicantColumnsMigrated = false;
 const ensureApplicantColumns = async (pool) => {
+  if (applicantColumnsMigrated) return;
   const queries = [
     "ALTER TABLE applicants ADD COLUMN IF NOT EXISTS gender VARCHAR(20)",
     "ALTER TABLE applicants ADD COLUMN IF NOT EXISTS district VARCHAR(100)",
@@ -15,7 +18,13 @@ const ensureApplicantColumns = async (pool) => {
   for (const q of queries) {
     try { await pool.query(q); } catch (e) { /* ignore if already exists */ }
   }
+  applicantColumnsMigrated = true;
 };
+
+// Run immediately at module load
+(async () => {
+  try { await ensureApplicantColumns(getPool()); } catch (e) { /* pool may not be ready yet */ }
+})();
 
 // GET /api/applicants — HR/Admin can view all registered applicants
 const getAllApplicants = async (req, res) => {

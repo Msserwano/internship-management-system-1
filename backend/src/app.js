@@ -51,10 +51,14 @@ else console.warn("[WARN] 'compression' not available — skipping response comp
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || origin === process.env.FRONTEND_URL) {
+    // Allow requests with no origin (e.g., mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow localhost in development and the configured frontend URL in production
+    if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || origin === process.env.FRONTEND_URL) {
       return callback(null, true);
     }
-    callback(null, true);
+    // Fix: reject all other origins instead of silently allowing them
+    callback(new Error(`CORS: Origin '${origin}' is not allowed.`));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

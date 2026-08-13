@@ -141,6 +141,10 @@ const loginUser = async (req, res) => {
 
     const userName = user.name || user.full_name || `${user.first_name || ""} ${user.last_name || ""}`.trim();
 
+    // Build JWT payload — only include stable identity fields.
+    // Fix: mutable profile fields (gpa, skills, university, etc.) are NOT embedded
+    // in the JWT because they can change any time the applicant updates their profile.
+    // The frontend fetches fresh profile data via GET /api/applicants/profile instead.
     const payload = {
       id: userId,
       name: userName,
@@ -148,18 +152,6 @@ const loginUser = async (req, res) => {
       role: frontendRole,
       rawRole,
       phone: user.phone_number || user.phone || "",
-      university: user.institution || "",
-      course: user.course_of_study || user.course || "",
-      yearOfStudy: user.academic_year_level || "",
-      gender: user.gender || "",
-      dob: user.date_of_birth || "",
-      district: user.district || "",
-      address: user.address || "",
-      nationality: user.nationality || "Ugandan",
-      gpa: user.gpa || "",
-      skills: user.skills || [],
-      languages: user.languages || [],
-      emergencyContact: user.emergency_contact || null,
     };
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });

@@ -13,8 +13,27 @@ const PK = {
   audit_logs: 'id',
 };
 
+// Fix: Whitelist of allowed columns per table — prevents SQL injection via req.body keys
+const ALLOWED_COLUMNS = {
+  users:        ['name', 'first_name', 'last_name', 'email', 'role', 'phone', 'title', 'department', 'status', 'is_verified'],
+  internships:  ['title', 'department', 'description', 'vacancies', 'deadline', 'supervisor', 'duration', 'location', 'status', 'posted_at'],
+  applications: ['status', 'review_note', 'assigned_hr_id', 'timeline', 'documents'],
+  interviews:   ['interview_date', 'interview_time', 'venue', 'meeting_link', 'panel_members', 'instructions', 'status'],
+  notifications:['is_read'],
+  departments:  ['name', 'directorate', 'is_active'],
+  audit_logs:   [],
+};
+
 const ensureTable = (table) => {
   if (!ALLOWED_TABLES.includes(table)) throw new Error(`Table '${table}' is not allowed.`);
+};
+
+// Fix: Validate that all provided keys are in the column whitelist for that table
+const sanitizeColumns = (table, payload) => {
+  const allowed = ALLOWED_COLUMNS[table] || [];
+  const keys = Object.keys(payload).filter(k => allowed.includes(k));
+  if (keys.length === 0) throw new Error('No valid fields provided.');
+  return keys;
 };
 
 // GET /api/data/:table  — list all rows (with optional ?q= text search)
@@ -62,8 +81,9 @@ const create = async (req, res) => {
     ensureTable(table);
     const pool = getPool();
     const payload = req.body;
-    const keys = Object.keys(payload);
-    if (keys.length === 0) return res.status(400).json({ success: false, message: 'No fields provided.' });
+    // Fix: only use whitelisted column names
+    const keys = sanitizeColumns(table, payload);
+    if (keys.length === 0) return res.status(400).json({ success: false, message: 'No valid fields provided.' });
 
     const cols = keys.join(', ');
     const vals = keys.map((_, i) => `$${i + 1}`).join(', ');
@@ -88,8 +108,9 @@ const update = async (req, res) => {
     const pool = getPool();
     const pk = PK[table] || 'id';
     const updates = req.body;
-    const keys = Object.keys(updates);
-    if (keys.length === 0) return res.status(400).json({ success: false, message: 'No fields to update.' });
+    // Fix: only allow whitelisted column names — prevents SQL injection
+    const keys = sanitizeColumns(table, updates);
+    if (keys.length === 0) return res.status(400).json({ success: false, message: 'No valid fields to update.' });
 
     const sets = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
     const values = keys.map(k => updates[k]);
