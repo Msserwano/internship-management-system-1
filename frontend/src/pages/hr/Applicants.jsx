@@ -267,6 +267,7 @@ const HRApplicants = () => {
                   <th>Institution / University</th>
                   <th>Course & Level</th>
                   <th>GPA</th>
+                  <th>Applications</th>
                   <th>Registered</th>
                   <th className="text-right">Actions</th>
                 </tr>
@@ -337,6 +338,16 @@ const HRApplicants = () => {
                       ) : (
                         <span className="text-xs text-slate-400">—</span>
                       )}
+                    </td>
+                    <td>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                          {a.application_count || 0} app{a.application_count !== 1 ? 's' : ''}
+                        </span>
+                        {a.latest_status && (
+                          <span className="text-[10px] text-slate-400 capitalize">{a.latest_status.replace(/_/g, ' ')}</span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <span className="text-xs text-slate-500 whitespace-nowrap">
@@ -418,7 +429,14 @@ const HRApplicants = () => {
 
               {/* Footer */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                <span className="text-[10px] text-slate-400">Registered {fDate(a.created_at)}</span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-400">Registered {fDate(a.created_at)}</span>
+                  {a.application_count > 0 && (
+                    <span className="text-[10px] font-semibold text-primary-600 dark:text-primary-400">
+                      {a.application_count} application{a.application_count !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
                 <Button
                   id={`view-applicant-${a.id}`}
                   variant="outline"
@@ -501,6 +519,20 @@ const HRApplicants = () => {
                   <p className="text-xs text-slate-400">Registration Date</p>
                   <p className="font-semibold text-slate-800 dark:text-white text-sm">{fDate(selectedApplicant.created_at)}</p>
                 </div>
+                <div>
+                  <p className="text-xs text-slate-400">Total Applications</p>
+                  <p className="font-semibold text-primary-600 dark:text-primary-400 text-sm">
+                    {selectedApplicant.application_count || 0} submitted
+                  </p>
+                </div>
+                {selectedApplicant.latest_status && (
+                  <div>
+                    <p className="text-xs text-slate-400">Latest Status</p>
+                    <p className="font-semibold text-slate-800 dark:text-white text-sm capitalize">
+                      {selectedApplicant.latest_status.replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -32,37 +32,62 @@ const getAllApplicants = async (req, res) => {
     const pool = getPool();
     await ensureApplicantColumns(pool);
     const { search } = req.query;
-    let where = '';
+    let havingClause = '';
     let params = [];
 
     if (search) {
       params.push(`%${search.toLowerCase()}%`);
-      where = `WHERE LOWER(full_name) LIKE $1 OR LOWER(email) LIKE $1`;
+      havingClause = `WHERE (
+        LOWER(ap.full_name) LIKE $1
+        OR LOWER(ap.email) LIKE $1
+        OR LOWER(COALESCE(ap.institution, latest_app.university, '')) LIKE $1
+        OR LOWER(COALESCE(ap.course_of_study, latest_app.course, '')) LIKE $1
+        OR LOWER(COALESCE(ap.phone_number, '')) LIKE $1
+      )`;
     }
 
+    // Join with the most recent application to fill in missing profile fields
     const result = await pool.query(
       `SELECT
-         applicant_id  AS id,
-         full_name     AS name,
-         email,
-         phone_number  AS phone,
-         national_id_number AS national_id,
-         date_of_birth AS dob,
-         gender,
-         district,
-         address,
-         nationality,
-         institution,
-         course_of_study AS course,
-         academic_year_level AS year_of_study,
-         gpa,
-         skills,
-         languages,
-         emergency_contact,
-         created_at
-       FROM applicants
-       ${where}
-       ORDER BY created_at DESC`,
+         ap.applicant_id                                     AS id,
+         ap.full_name                                        AS name,
+         ap.email,
+         ap.phone_number                                     AS phone,
+         ap.national_id_number                               AS national_id,
+         ap.date_of_birth                                    AS dob,
+         ap.gender,
+         ap.district,
+         ap.address,
+         ap.nationality,
+         -- Prefer profile institution; fall back to latest application university
+         COALESCE(NULLIF(ap.institution,''), latest_app.university)          AS institution,
+         COALESCE(NULLIF(ap.course_of_study,''), latest_app.course)          AS course,
+         ap.academic_year_level                              AS year_of_study,
+         -- Prefer profile GPA; fall back to latest application GPA
+         COALESCE(NULLIF(ap.gpa::text,''), latest_app.gpa::text)             AS gpa,
+         ap.skills,
+         ap.languages,
+         ap.emergency_contact,
+         ap.created_at,
+         COALESCE(app_counts.total_apps, 0)                 AS application_count,
+         latest_app.status                                  AS latest_status
+       FROM applicants ap
+       -- Latest application per applicant (for fallback data)
+       LEFT JOIN LATERAL (
+         SELECT university, course, gpa, status
+         FROM applications
+         WHERE applicant_id = ap.applicant_id::text
+         ORDER BY submitted_at DESC
+         LIMIT 1
+       ) latest_app ON TRUE
+       -- Total application count
+       LEFT JOIN (
+         SELECT applicant_id, COUNT(*) AS total_apps
+         FROM applications
+         GROUP BY applicant_id
+       ) app_counts ON app_counts.applicant_id = ap.applicant_id::text
+       ${havingClause}
+       ORDER BY ap.created_at DESC`,
       params
     );
 
