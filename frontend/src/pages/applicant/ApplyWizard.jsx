@@ -165,11 +165,25 @@ const ApplyWizard = () => {
       if (!docsToSubmit.transcriptDoc && formData.transcriptDoc) docsToSubmit.transcriptDoc = formData.transcriptDoc;
 
       await applicationService.submit({
-        internshipId:   internship.id,
-        university:     formData.university || "Makerere University",
-        course:         formData.course || "General Studies",
-        gpa:            formData.gpa || "3.5",
-        documents:      docsToSubmit,
+        internshipId:     internship.id,
+        // Personal details
+        fullName:         formData.fullName,
+        phone:            formData.phone,
+        gender:           formData.gender,
+        dob:              formData.dob,
+        district:         formData.district,
+        // Academic details
+        qualification:    formData.qualification,
+        course:           formData.course || "General Studies",
+        yearOfStudy:      formData.yearOfStudy,
+        gpa:              formData.gpa,
+        // University info
+        university:       formData.university || "Makerere University",
+        studentId:        formData.studentId,
+        headOfDept:       formData.headOfDept,
+        universityEmail:  formData.universityEmail,
+        // Documents
+        documents:        docsToSubmit,
       });
       toast.success("Application and attached documents submitted successfully to KCCA!");
       navigate("/applicant/applications");

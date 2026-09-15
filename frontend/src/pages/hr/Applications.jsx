@@ -334,12 +334,55 @@ const HRApplications = () => {
               <Badge status={selectedApp.status} />
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl text-xs">
-              <div><p className="text-slate-400">University</p><p className="font-bold">{selectedApp.university}</p></div>
-              <div><p className="text-slate-400">Course</p><p className="font-bold">{selectedApp.course}</p></div>
-              <div><p className="text-slate-400">GPA</p><p className="font-bold text-primary-600">{selectedApp.gpa}</p></div>
-              <div><p className="text-slate-400">Gender</p><p className="font-bold">{selectedApp.gender || "Not specified"}</p></div>
-            </div>
+            {/* Full Applicant Details */}
+            {(() => {
+              // Parse applicant_meta if it's a string
+              let meta = selectedApp.applicant_meta || {};
+              if (typeof meta === "string") {
+                try { meta = JSON.parse(meta); } catch { meta = {}; }
+              }
+              return (
+                <div className="space-y-3">
+                  {/* Personal Details */}
+                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl space-y-3">
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Personal Details</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                      <div><p className="text-slate-400">Full Name</p><p className="font-bold text-slate-800 dark:text-white">{selectedApp.applicantName || "—"}</p></div>
+                      <div><p className="text-slate-400">Phone</p><p className="font-bold text-slate-800 dark:text-white">{meta.phone || selectedApp.phone || "—"}</p></div>
+                      <div><p className="text-slate-400">Gender</p><p className="font-bold text-slate-800 dark:text-white">{meta.gender || selectedApp.gender || "—"}</p></div>
+                      <div><p className="text-slate-400">Date of Birth</p><p className="font-bold text-slate-800 dark:text-white">{meta.dob ? new Date(meta.dob).toLocaleDateString() : "—"}</p></div>
+                      <div><p className="text-slate-400">Home District</p><p className="font-bold text-slate-800 dark:text-white">{meta.district || "—"}</p></div>
+                      <div><p className="text-slate-400">Submitted</p><p className="font-bold text-slate-800 dark:text-white">{selectedApp.submittedAt ? new Date(selectedApp.submittedAt).toLocaleDateString() : "—"}</p></div>
+                    </div>
+                  </div>
+
+                  {/* Academic Details */}
+                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl space-y-3">
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Academic Details</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                      <div><p className="text-slate-400">Qualification</p><p className="font-bold text-slate-800 dark:text-white">{meta.qualification || "—"}</p></div>
+                      <div><p className="text-slate-400">Course / Program</p><p className="font-bold text-slate-800 dark:text-white">{selectedApp.course || "—"}</p></div>
+                      <div><p className="text-slate-400">Year of Study</p><p className="font-bold text-slate-800 dark:text-white">{meta.yearOfStudy || "—"}</p></div>
+                      <div><p className="text-slate-400">GPA / CGPA</p><p className="font-bold text-primary-600 dark:text-primary-400 text-sm">{selectedApp.gpa || "—"}</p></div>
+                      <div><p className="text-slate-400">University</p><p className="font-bold text-slate-800 dark:text-white">{selectedApp.university || "—"}</p></div>
+                      <div><p className="text-slate-400">Student ID / Reg No.</p><p className="font-bold text-slate-800 dark:text-white">{meta.studentId || "—"}</p></div>
+                    </div>
+                  </div>
+
+                  {/* University Contact Info */}
+                  {(meta.headOfDept || meta.universityEmail) && (
+                    <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl space-y-3">
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">University Contact</h4>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        {meta.headOfDept && <div><p className="text-slate-400">Head of Department</p><p className="font-bold text-slate-800 dark:text-white">{meta.headOfDept}</p></div>}
+                        {meta.universityEmail && <div><p className="text-slate-400">University Email</p><p className="font-bold text-primary-600 dark:text-primary-400">{meta.universityEmail}</p></div>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
 
             {/* Submitted Applicant Documents */}
             {(() => {

@@ -15,6 +15,7 @@ const ensureApplicationColumns = async () => {
     const db = pool();
     await db.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS timeline JSONB");
     await db.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS documents JSONB");
+    await db.query("ALTER TABLE applications ADD COLUMN IF NOT EXISTS applicant_meta JSONB");
     appColumnsMigrated = true;
   } catch (e) { /* ignore */ }
 };
@@ -104,7 +105,18 @@ const getApplicationById = async (req, res) => {
 // ---------------------------------------------------------------------------
 const submitApplication = async (req, res) => {
   try {
-    const { internshipId, university, course, gpa, documents } = req.body;
+    const {
+      internshipId,
+      university, course, gpa,
+      // Personal details from wizard
+      fullName, phone, gender, dob, district,
+      // Academic details
+      qualification, yearOfStudy,
+      // University info
+      studentId, headOfDept, universityEmail,
+      // Documents
+      documents,
+    } = req.body;
 
     if (!internshipId || !university || !course) {
       return res.status(400).json({ success: false, message: "Internship, university, and course are required." });
@@ -153,17 +165,65 @@ const submitApplication = async (req, res) => {
       const timeline = [{ status: "submitted", date: new Date().toISOString(), note: "Application submitted successfully." }];
       const docPayload = documents ? JSON.stringify(documents) : null;
 
+      // Build extra metadata to store alongside the application
+      const extraMeta = JSON.stringify({
+        qualification: qualification || null,
+        yearOfStudy: yearOfStudy || null,
+        studentId: studentId || null,
+        headOfDept: headOfDept || null,
+        universityEmail: universityEmail || null,
+        gender: gender || null,
+        dob: dob || null,
+        district: district || null,
+        phone: phone || null,
+      });
+
       const appRes = await client.query(
-        `INSERT INTO applications (id, internship_id, applicant_id, university, course, gpa, status, review_note, submitted_at, timeline, documents)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        `INSERT INTO applications
+           (id, internship_id, applicant_id, university, course, gpa, status, review_note, submitted_at, timeline, documents, applicant_meta)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
          RETURNING *`,
-        [id, internshipId, applicantId, university, course, gpa || null, "submitted", null, new Date().toISOString(), JSON.stringify(timeline), docPayload]
+        [id, internshipId, applicantId, university, course, gpa || null, "submitted", null, new Date().toISOString(), JSON.stringify(timeline), docPayload, extraMeta]
       );
 
       await client.query(
         "UPDATE internships SET applicants_count = COALESCE(applicants_count,0) + 1, updated_at=NOW() WHERE id = $1",
         [internshipId]
       );
+
+      // -----------------------------------------------------------------------
+      // KEY FIX: Auto-update the applicant's profile with fresh data from the
+      // application form — so HR sees complete details even if the applicant
+      // never separately visited their Profile page.
+      // -----------------------------------------------------------------------
+      try {
+        await client.query(
+          `UPDATE applicants SET
+             phone_number         = COALESCE(NULLIF($1,''), phone_number),
+             gender               = COALESCE(NULLIF($2,''), gender),
+             date_of_birth        = CASE WHEN $3 IS NOT NULL AND $3 <> '' THEN $3::date ELSE date_of_birth END,
+             district             = COALESCE(NULLIF($4,''), district),
+             institution          = COALESCE(NULLIF($5,''), institution),
+             course_of_study      = COALESCE(NULLIF($6,''), course_of_study),
+             academic_year_level  = COALESCE(NULLIF($7,''), academic_year_level),
+             gpa                  = COALESCE(NULLIF($8,''), gpa)
+           WHERE applicant_id::text = $9`,
+          [
+            phone || null,
+            gender || null,
+            dob || null,
+            district || null,
+            university || null,
+            course || null,
+            yearOfStudy || null,
+            gpa || null,
+            String(applicantId),
+          ]
+        );
+      } catch (profileErr) {
+        // Non-fatal: log and continue — application is already saved
+        console.warn("[APPLY] Profile auto-update failed:", profileErr.message);
+      }
 
       await client.query("COMMIT");
 
